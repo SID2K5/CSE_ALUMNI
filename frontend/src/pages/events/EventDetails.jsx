@@ -1,428 +1,309 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import API from "../../services/api";
+import { useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import dayjs from "dayjs";
-
-import { motion } from "framer-motion";
-
 import {
+  ArrowLeft,
   CalendarDays,
   MapPin,
   Users,
-  Clock3,
-  BadgeCheck,
-  GraduationCap,
   Sparkles,
+  Clock3,
+  Share2,
+  Trash2,
+  Image as ImageIcon,
 } from "lucide-react";
 
+import API from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+
+import {
+  Avatar,
+  Badge,
+  Button,
+  EmptyState,
+  Skeleton,
+} from "../../components/ui";
+
 const EventDetails = () => {
-
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const [event, setEvent] =
-    useState(null);
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [rsvpLoading, setRsvpLoading] = useState(false);
 
-  /* =====================================================
-     FETCH EVENT
-  ===================================================== */
   const fetchEvent = async () => {
-
+    setLoading(true);
     try {
-
-      const { data } =
-        await API.get(
-          `/events/${id}`
-        );
-
+      const { data } = await API.get(`/events/${id}`);
       setEvent(data);
-
-    } catch (error) {
-
-      console.error(error);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchEvent();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
-  if (!event) {
+  const joined =
+    event?.attendees?.some((a) => (a?._id || a) === user?._id) || false;
 
+  const start = event?.startDate ? dayjs(event.startDate) : null;
+  const end = event?.endDate ? dayjs(event.endDate) : null;
+  const isPast = end && end.valueOf() < Date.now();
+  const canDelete =
+    user?.role === "admin" ||
+    (event?.createdBy?._id && event.createdBy._id === user?._id);
+
+  const handleRSVP = async () => {
+    if (!event?._id) return;
+    setRsvpLoading(true);
+    try {
+      await API.put(`/events/rsvp/${event._id}`);
+      await fetchEvent();
+    } catch (err) {
+      toast.error("Could not update RSVP");
+    } finally {
+      setRsvpLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm(`Delete "${event.title}"? This cannot be undone.`)) return;
+    try {
+      await API.delete(`/events/${event._id}`);
+      toast.success("Event deleted");
+      navigate("/events");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Delete failed");
+    }
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: event.title, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied");
+      }
+    } catch {
+      /* user dismissed share */
+    }
+  };
+
+  if (loading) {
     return (
-
-      <div className="min-h-screen flex items-center justify-center text-white">
-
-        Loading...
-
+      <div className="pt-4 pb-10 space-y-5">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-72 w-full" />
+        <Skeleton className="h-6 w-2/3" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-5/6" />
       </div>
-
     );
   }
 
-  const daysLeft =
-    dayjs(
-      event.endDate ||
-        event.date
-    ).diff(dayjs(), "day");
+  if (!event) {
+    return (
+      <EmptyState
+        icon={CalendarDays}
+        title="Event not found"
+        description="This event may have been removed or does not exist."
+        action={
+          <Button variant="secondary" onClick={() => navigate("/events")}>
+            Back to events
+          </Button>
+        }
+      />
+    );
+  }
+
+  const attendees = event.attendees || [];
 
   return (
+    <div className="pb-10">
+      <div className="pt-4">
+        <button
+          onClick={() => navigate("/events")}
+          className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink mb-4"
+        >
+          <ArrowLeft size={14} />
+          Events
+        </button>
+      </div>
 
-    <div className="relative w-full max-w-[1250px] mx-auto pb-24">
-
-      {/* ===================================================== */}
-      {/* BACKGROUND EFFECTS */}
-      {/* ===================================================== */}
-
-      <div className="absolute top-0 left-0 w-96 h-96 bg-cyan-500/20 blur-[140px] rounded-full"></div>
-
-      <div className="absolute top-[30%] right-0 w-96 h-96 bg-purple-500/20 blur-[140px] rounded-full"></div>
-
-      {/* ===================================================== */}
-      {/* HERO SECTION */}
-      {/* ===================================================== */}
-
-      <motion.div
-        initial={{
-          opacity: 0,
-          y: 40,
-        }}
-        animate={{
-          opacity: 1,
-          y: 0,
-        }}
-        className="relative overflow-hidden rounded-[40px] border border-white/10 bg-[#071028]/80 backdrop-blur-2xl shadow-[0_20px_80px_rgba(0,0,0,0.45)]"
-      >
-
-        {/* ===================================================== */}
-        {/* POSTER */}
-        {/* ===================================================== */}
-
-        {event.poster && (
-
-          <div className="relative bg-black flex items-center justify-center overflow-hidden">
-
-            {/* BLURRED BG */}
-
+      {/* POSTER */}
+      <div className="card overflow-hidden mb-5">
+        <div className="relative aspect-[16/9] sm:aspect-[21/9] bg-surface-2 overflow-hidden">
+          {event.poster ? (
             <img
               src={event.poster}
               alt={event.title}
-              className="absolute inset-0 w-full h-full object-cover blur-3xl scale-110 opacity-25"
+              className="w-full h-full object-cover"
             />
-
-            {/* MAIN IMAGE */}
-
-            <img
-              src={event.poster}
-              alt={event.title}
-              className="relative z-10 max-h-[700px] w-auto max-w-full object-contain"
-            />
-
-            {/* OVERLAY */}
-
-            <div className="absolute inset-0 bg-gradient-to-t from-[#071028] via-transparent to-transparent"></div>
-
-          </div>
-
-        )}
-
-        {/* ===================================================== */}
-        {/* CONTENT */}
-        {/* ===================================================== */}
-
-        <div className="relative z-20 p-8 md:p-12">
-
-          {/* ===================================================== */}
-          {/* TOP BADGES */}
-          {/* ===================================================== */}
-
-          <div className="flex flex-wrap items-center gap-3 mb-6">
-
-            {/* CATEGORY */}
-
-            <div className="px-5 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-sm font-semibold flex items-center gap-2">
-
-              <Sparkles size={16} />
-
-              {event.category ||
-                "General"}
-
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <ImageIcon size={48} className="text-muted" />
             </div>
-
-            {/* HOST TYPE */}
-
-            {event.createdBy?.role ===
-              "teacher" && (
-
-              <div className="px-5 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm font-semibold flex items-center gap-2">
-
-                <GraduationCap size={16} />
-
-                Teacher Hosted
-
-              </div>
-
-            )}
-
-            {event.createdBy?.role ===
-              "alumni" && (
-
-              <div className="px-5 py-2 rounded-full bg-green-500/10 border border-green-500/20 text-green-300 text-sm font-semibold flex items-center gap-2">
-
-                <BadgeCheck size={16} />
-
-                Alumni Hosted
-
-              </div>
-
-            )}
-
-            {event.createdBy?.role ===
-              "admin" && (
-
-              <div className="px-5 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-sm font-semibold">
-                Admin Hosted
-              </div>
-
-            )}
-
-            {/* AUTO DELETE */}
-
-            {event.autoDelete && (
-
-              <div className="px-5 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-300 text-sm font-semibold">
-
-                Auto Delete Enabled
-
-              </div>
-
-            )}
-
-          </div>
-
-          {/* ===================================================== */}
-          {/* TITLE */}
-          {/* ===================================================== */}
-
-          <h1 className="text-4xl md:text-6xl font-black text-white leading-tight">
-
-            {event.title}
-
-          </h1>
-
-          {/* ===================================================== */}
-          {/* DESCRIPTION */}
-          {/* ===================================================== */}
-
-          <div className="mt-8 rounded-[30px] border border-white/10 bg-white/5 backdrop-blur-xl p-7 md:p-9">
-
-            <h2 className="text-xl font-bold text-white mb-5">
-              About this event
-            </h2>
-
-            <p className="text-gray-300 leading-[2] text-[15px] md:text-lg whitespace-pre-line">
-
-              {event.description}
-
-            </p>
-
-          </div>
-
-          {/* ===================================================== */}
-          {/* INFO GRID */}
-          {/* ===================================================== */}
-
-          <div className="grid md:grid-cols-4 gap-5 mt-8">
-
-            {/* LOCATION */}
-
-            <div className="rounded-[28px] bg-gradient-to-br from-pink-500/10 to-purple-500/10 border border-white/10 p-6">
-
-              <div className="w-14 h-14 rounded-2xl bg-pink-500/20 flex items-center justify-center mb-5">
-
-                <MapPin
-                  className="text-pink-400"
-                  size={24}
-                />
-
-              </div>
-
-              <p className="text-gray-400 text-sm mb-1">
-                Location
-              </p>
-
-              <h3 className="text-white text-xl font-bold">
-
-                {event.location}
-
-              </h3>
-
-            </div>
-
-            {/* DURATION */}
-
-            <div className="rounded-[28px] bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-white/10 p-6">
-
-              <div className="w-14 h-14 rounded-2xl bg-cyan-500/20 flex items-center justify-center mb-5">
-
-                <CalendarDays
-                  className="text-cyan-400"
-                  size={24}
-                />
-
-              </div>
-
-              <p className="text-gray-400 text-sm mb-1">
-                Duration
-              </p>
-
-              <h3 className="text-white font-bold leading-relaxed">
-
-                {dayjs(
-                  event.startDate ||
-                    event.date
-                ).format(
-                  "DD MMM YYYY"
-                )}
-
-                <br />
-
-                →
-
-                <br />
-
-                {dayjs(
-                  event.endDate ||
-                    event.date
-                ).format(
-                  "DD MMM YYYY"
-                )}
-
-              </h3>
-
-            </div>
-
-            {/* STATUS */}
-
-            <div className="rounded-[28px] bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-white/10 p-6">
-
-              <div className="w-14 h-14 rounded-2xl bg-purple-500/20 flex items-center justify-center mb-5">
-
-                <Clock3
-                  className="text-purple-400"
-                  size={24}
-                />
-
-              </div>
-
-              <p className="text-gray-400 text-sm mb-1">
-                Status
-              </p>
-
-              <h3 className="text-white text-xl font-bold">
-
-                {daysLeft > 0
-                  ? `${daysLeft} Days Left`
-                  : "Ending Today 🔥"}
-
-              </h3>
-
-            </div>
-
-            {/* ATTENDEES */}
-
-            <div className="rounded-[28px] bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-white/10 p-6">
-
-              <div className="w-14 h-14 rounded-2xl bg-green-500/20 flex items-center justify-center mb-5">
-
-                <Users
-                  className="text-green-400"
-                  size={24}
-                />
-
-              </div>
-
-              <p className="text-gray-400 text-sm mb-1">
-                Attendees
-              </p>
-
-              <h3 className="text-white text-xl font-bold">
-
-                {
-                  event.attendees
-                    ?.length
-                }{" "}
-                Joined
-
-              </h3>
-
-            </div>
-
-          </div>
-
-          {/* ===================================================== */}
-          {/* ATTENDEES */}
-          {/* ===================================================== */}
-
-          {event.attendees
-            ?.length > 0 && (
-
-            <div className="mt-10">
-
-              <h2 className="text-2xl font-black text-white mb-5">
-
-                People Joining
-
-              </h2>
-
-              <div className="flex flex-wrap gap-4">
-
-                {event.attendees.map(
-                  (u) => (
-
-                    <motion.div
-                      key={u._id}
-                      whileHover={{
-                        y: -4,
-                      }}
-                      className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl"
-                    >
-
-                      <img
-                        src={
-                          u.profilePic ||
-                          "https://via.placeholder.com/50"
-                        }
-                        alt={u.name}
-                        className="w-12 h-12 rounded-full object-cover border border-white/20"
-                      />
-
-                      <div>
-
-                        <p className="text-white font-semibold">
-
-                          {u.name}
-
-                        </p>
-
-                      </div>
-
-                    </motion.div>
-
-                  )
-                )}
-
-              </div>
-
-            </div>
-
           )}
 
+          <div className="absolute top-4 left-4 flex gap-2">
+            {event.featured && (
+              <Badge variant="accent">
+                <Sparkles size={10} />
+                Featured
+              </Badge>
+            )}
+            {isPast && <Badge variant="neutral">Past</Badge>}
+            {event.category && event.category !== "General" && (
+              <Badge variant="info">{event.category}</Badge>
+            )}
+          </div>
         </div>
 
-      </motion.div>
+        {/* INFO BLOCK */}
+        <div className="p-5 sm:p-7">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-ink tracking-tight">
+              {event.title}
+            </h1>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleShare}
+                className="icon-btn !w-10 !h-10 border border-line"
+                aria-label="Share"
+                title="Share"
+              >
+                <Share2 size={16} />
+              </button>
+              {canDelete && (
+                <button
+                  onClick={handleDelete}
+                  className="icon-btn !w-10 !h-10 border border-line text-red-500 hover:text-red-600"
+                  aria-label="Delete"
+                  title="Delete"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 mt-5 text-sm">
+            {start && (
+              <InfoRow
+                icon={CalendarDays}
+                title="When"
+                value={
+                  start.isSame(end, "day") || !end
+                    ? `${start.format("ddd, MMM D, YYYY")} · ${start.format(
+                        "h:mm A"
+                      )}${end ? ` – ${end.format("h:mm A")}` : ""}`
+                    : `${start.format("MMM D")} → ${end.format("MMM D, YYYY")}`
+                }
+              />
+            )}
+            {event.location && (
+              <InfoRow icon={MapPin} title="Where" value={event.location} />
+            )}
+            {event.createdBy?.name && (
+              <InfoRow
+                icon={Users}
+                title="Organizer"
+                value={event.createdBy.name}
+              />
+            )}
+            <InfoRow
+              icon={Clock3}
+              title="Going"
+              value={`${attendees.length} ${
+                attendees.length === 1 ? "person" : "people"
+              }`}
+            />
+          </div>
+
+          <div className="mt-6">
+            {!isPast ? (
+              <Button
+                variant={joined ? "secondary" : "primary"}
+                size="lg"
+                loading={rsvpLoading}
+                onClick={handleRSVP}
+              >
+                {joined ? "Going ✓ · Cancel RSVP" : "RSVP to this event"}
+              </Button>
+            ) : (
+              <p className="text-sm text-muted">This event has ended.</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* DESCRIPTION */}
+      {event.description && (
+        <div className="card p-5 sm:p-7 mb-5">
+          <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">
+            About this event
+          </h2>
+          <p className="text-ink whitespace-pre-wrap leading-relaxed">
+            {event.description}
+          </p>
+        </div>
+      )}
+
+      {/* ATTENDEES */}
+      {attendees.length > 0 && (
+        <div className="card p-5 sm:p-7">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-muted uppercase tracking-wide">
+              Who's going
+            </h2>
+            <Badge variant="neutral">{attendees.length}</Badge>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {attendees.slice(0, 16).map((a) => (
+              <div
+                key={a._id || a}
+                className="flex items-center gap-2 bg-surface-2 rounded-full pr-3 border border-line"
+              >
+                <Avatar user={a} size={28} />
+                <span className="text-sm text-ink truncate max-w-[140px]">
+                  {a.name || "Guest"}
+                </span>
+              </div>
+            ))}
+            {attendees.length > 16 && (
+              <div className="flex items-center justify-center bg-surface-2 rounded-full px-3 border border-line text-sm text-muted">
+                +{attendees.length - 16} more
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+const InfoRow = ({ icon: Icon, title, value }) => (
+  <div className="flex items-start gap-3">
+    <div className="w-9 h-9 rounded-lg bg-surface-2 flex items-center justify-center shrink-0 mt-0.5">
+      <Icon size={15} className="text-muted" />
+    </div>
+    <div className="min-w-0">
+      <div className="text-xs font-semibold text-muted uppercase tracking-wide">
+        {title}
+      </div>
+      <div className="text-ink text-sm mt-0.5 break-words">{value}</div>
+    </div>
+  </div>
+);
 
 export default EventDetails;

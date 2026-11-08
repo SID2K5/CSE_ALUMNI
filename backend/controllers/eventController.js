@@ -159,8 +159,12 @@ export const getEvents = async (
 ) => {
   try {
 
+    // Public listing — only approved, non-deleted events.
+    // Pending events (if any) must only appear in the admin queue.
     const events = await Event.find({
       deletedAt: null,
+      isApproved: true,
+      status: "approved",
     })
       .populate(
         "createdBy",
