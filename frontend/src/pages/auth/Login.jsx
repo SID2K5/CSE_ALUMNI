@@ -58,6 +58,9 @@ const Login = () => {
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden px-4">
 
+      {/* FALLBACK GRADIENT (shows if the video is unavailable) */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1e1b4b] via-[#0b1120] to-[#083344]"></div>
+
       {/* 🎥 BACKGROUND VIDEO */}
       <video
         autoPlay
@@ -80,17 +83,21 @@ const Login = () => {
         onSubmit={handleSubmit}
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-full max-w-md backdrop-blur-xl bg-white/10 dark:bg-gray-900/30 p-8 rounded-3xl shadow-2xl border border-white/20 space-y-5"
+        className="relative z-10 w-full max-w-md backdrop-blur-2xl bg-slate-950/55 p-8 rounded-3xl shadow-2xl border border-white/15 space-y-5"
       >
 
         {/* TITLE */}
         <div className="text-center space-y-2">
 
-          <h2 className="text-4xl font-bold text-white">
-            Welcome to NEXUS 🚀
+          <p className="text-cyan-300 font-semibold tracking-[0.2em] text-xs uppercase">
+            NEXUS
+          </p>
+
+          <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            Welcome back
           </h2>
 
-          <p className="text-gray-200 text-sm">
+          <p className="text-gray-300 text-sm">
             Connect. Collaborate. Grow.
           </p>
 

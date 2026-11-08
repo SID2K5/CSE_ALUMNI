@@ -240,211 +240,62 @@ const Feed = () => {
 
   return (
 
-    <div
-      className="
-        w-full
-        max-w-[1000px]
-        mx-auto
-        pb-16
-      "
-    >
+    <div className="w-full max-w-content mx-auto">
 
       {/* ===================================================== */}
       {/* HEADER */}
       {/* ===================================================== */}
 
       <motion.div
-        initial={{
-          opacity: 0,
-          y: -15,
-        }}
-        animate={{
-          opacity: 1,
-          y: 0,
-        }}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
         className="
-          sticky
-          top-20
-          z-20
-          backdrop-blur-xl
-          bg-white/80
-          dark:bg-[#020617]/80
-          border
-          border-gray-200
-          dark:border-gray-800
-          rounded-3xl
-          px-5 md:px-7
-          py-5
-          mb-8
-          shadow-sm
+          sticky top-[72px] z-20
+          backdrop-blur-xl bg-bg/80
+          -mx-4 sm:mx-0 px-4 sm:px-0
+          pt-3 pb-4 mb-6
+          border-b border-line sm:border-none
         "
       >
-
-        <div
-          className="
-            flex
-            flex-col
-            gap-5
-          "
-        >
-
-          {/* TOP */}
-
-          <div
-            className="
-              flex
-              items-center
-              justify-between
-            "
-          >
-
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="text-brand" size={24} />
             <div>
-
-              <div
-                className="
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-
-                <Sparkles
-                  className="
-                    text-purple-500
-                  "
-                  size={26}
-                />
-
-                <h1
-                  className="
-                    text-4xl
-                    md:text-5xl
-                    font-black
-                    tracking-tight
-                    gradient-text
-                  "
-                >
-                  Feed
-                </h1>
-
-              </div>
-
-              <p
-                className="
-                  text-gray-600
-                  dark:text-gray-400
-                  mt-2
-                  text-sm
-                  md:text-base
-                "
-              >
-                Connect with students,
-                alumni & opportunities 🚀
+              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-ink">
+                Your Feed
+              </h1>
+              <p className="text-muted text-sm hidden sm:block">
+                Students, alumni &amp; opportunities
               </p>
-
             </div>
-
-            {/* TRENDING */}
-
-            <div
-              className="
-                hidden
-                md:flex
-                items-center
-                gap-2
-                text-purple-500
-                font-semibold
-              "
-            >
-
-              <TrendingUp size={18} />
-
-              Trending
-
-            </div>
-
           </div>
 
-          {/* ===================================================== */}
-          {/* TRENDING TAGS */}
-          {/* ===================================================== */}
-
-          <div
-            className="
-              flex
-              flex-wrap
-              gap-2
-            "
-          >
-
-            {[
-              "MERN",
-              "Placements",
-              "DSA",
-              "AI",
-              "Hackathon",
-            ].map((tag) => (
-
-              <button
-                key={tag}
-                onClick={() =>
-
-                  setSelectedTag(
-                    selectedTag === tag
-                      ? ""
-                      : tag
-                  )
-
-                }
-                className={`
-                  flex
-                  items-center
-                  gap-1
-                  px-3
-                  py-1.5
-                  rounded-full
-                  text-sm
-                  font-medium
-                  transition
-                  hover:scale-105
-
-                  ${
-                    selectedTag === tag
-                      ? `
-                        bg-gradient-to-r
-                        from-purple-500
-                        to-cyan-400
-                        text-white
-                      `
-                      : `
-                        bg-purple-100
-                        dark:bg-purple-900/30
-                        text-purple-600
-                        dark:text-purple-300
-                      `
-                  }
-                `}
-              >
-
-                <Hash size={14} />
-
-                {tag}
-
-              </button>
-
-            ))}
-
+          <div className="hidden md:flex items-center gap-1.5 text-muted font-semibold text-sm">
+            <TrendingUp size={16} className="text-brand-2" />
+            Trending
           </div>
-
         </div>
 
+        {/* TRENDING TAGS */}
+        <div className="flex flex-nowrap sm:flex-wrap gap-2 mt-4 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+          {["MERN", "Placements", "DSA", "AI", "Hackathon"].map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setSelectedTag(selectedTag === tag ? "" : tag)}
+              className={`chip shrink-0 ${selectedTag === tag ? "chip-active" : ""}`}
+            >
+              <Hash size={13} />
+              {tag}
+            </button>
+          ))}
+        </div>
       </motion.div>
 
       {/* ===================================================== */}
       {/* MAIN CONTENT */}
       {/* ===================================================== */}
 
-      <div className="space-y-8">
+      <div className="space-y-5">
 
         {/* ===================================================== */}
         {/* ADMIN PANEL */}
@@ -509,11 +360,7 @@ const Feed = () => {
         {/* POSTS */}
         {/* ===================================================== */}
 
-        <div
-          className="
-            space-y-10
-          "
-        >
+        <div className="space-y-5">
 
           <AnimatePresence>
 

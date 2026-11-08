@@ -1,39 +1,42 @@
 import Navbar from "./Navbar";
 import Topbar from "./Topbar";
+import MobileNav from "./MobileNav";
 
 const Layout = ({ children }) => {
   return (
-    <div className="min-h-screen bg-[#B8FFFF] dark:bg-[#020617] overflow-x-hidden">
+    <div className="min-h-screen bg-bg text-ink overflow-x-hidden">
 
-      {/* TOPBAR */}
+      {/* TOP BAR */}
       <Topbar />
 
       {/* MAIN WRAPPER */}
-      <div className="flex w-full">
+      <div className="mx-auto flex w-full max-w-shell">
 
-        {/* SIDEBAR SPACE */}
-        <div className="hidden md:block w-[240px] shrink-0">
+        {/* DESKTOP SIDEBAR (reserves space; nav itself is sticky) */}
+        <aside className="hidden md:block w-[240px] shrink-0">
           <Navbar />
-        </div>
+        </aside>
 
         {/* MAIN CONTENT */}
         <main
           className="
             flex-1
-            pt-20
-            px-4
-            md:px-6
-            lg:px-8
             w-full
-            overflow-x-hidden
+            min-w-0
+            pt-[72px] md:pt-20
+            px-4 sm:px-6 lg:px-8
+            pb-24 md:pb-10
           "
         >
-          <div className="w-full max-w-[1400px] mx-auto">
+          <div className="w-full mx-auto">
             {children}
           </div>
         </main>
 
       </div>
+
+      {/* MOBILE BOTTOM NAVIGATION */}
+      <MobileNav />
 
     </div>
   );
