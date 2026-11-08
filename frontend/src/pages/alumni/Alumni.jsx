@@ -1,588 +1,706 @@
 import { useEffect, useMemo, useState } from "react";
-import API from "../../services/api";
-import { motion } from "framer-motion";
-
+import { useNavigate } from "react-router-dom";
 import {
-  MapPin,
-  MessageCircle,
+  Search,
   BriefcaseBusiness,
+  MapPin,
   GraduationCap,
   ShieldCheck,
-  Search,
-  Sparkles,
+  Users,
+  LayoutGrid,
+  Building2,
+  BarChart3,
+  MessageCircle,
   X,
+  Filter,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Cell,
+} from "recharts";
 
+import API from "../../services/api";
+import { useOnline } from "../../context/OnlineContext";
+import { useDebounce } from "../../hooks/useDebounce";
+
+import { Avatar, Badge, Button, EmptyState, Skeleton } from "../../components/ui";
 import ConnectionButton from "../../components/ConnectionButton";
-import socket from "../../socket";
-import { useNavigate } from "react-router-dom";
+
+/* =====================================================
+   SIGNATURE PAGE — ALUMNI NETWORK
+   - Three views: Directory / By Company / Insights
+   - Real server-side filters (name, year, company, location, domain, skills)
+   - No fake geo map; real top-company + year distribution charts
+===================================================== */
+
+const VIEWS = [
+  { key: "grid", label: "Directory", icon: LayoutGrid },
+  { key: "company", label: "By Company", icon: Building2 },
+  { key: "insights", label: "Insights", icon: BarChart3 },
+];
 
 const Alumni = () => {
-  const [allAlumni, setAllAlumni] = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState([]);
-
-  const [search, setSearch] = useState("");
-
-  // MULTI SELECT STATES
-  const [selectedCompanies, setSelectedCompanies] = useState([]);
-  const [selectedYears, setSelectedYears] = useState([]);
-  const [selectedLocations, setSelectedLocations] = useState([]);
-
-  // FILTER OPTIONS
-  const [companies, setCompanies] = useState([]);
-  const [years, setYears] = useState([]);
-  const [locations, setLocations] = useState([]);
-
   const navigate = useNavigate();
+  const { onlineUsers = [] } = useOnline();
 
-  // ================= FETCH =================
-  const fetchAlumni = async () => {
-    const { data } = await API.get("/alumni");
+  const [view, setView] = useState("grid");
 
-    setAllAlumni(data);
+  // Filter state
+  const [search, setSearch] = useState("");
+  const [year, setYear] = useState("");
+  const [company, setCompany] = useState("");
+  const [location, setLocation] = useState("");
+  const [domain, setDomain] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
-    setCompanies([
-      ...new Set(data.map((u) => u.company).filter(Boolean)),
-    ]);
+  const debouncedSearch = useDebounce(search, 300);
+  const debouncedCompany = useDebounce(company, 300);
+  const debouncedLocation = useDebounce(location, 300);
+  const debouncedDomain = useDebounce(domain, 300);
 
-    setYears(
-      [...new Set(data.map((u) => u.graduationYear).filter(Boolean))].sort(
-        (a, b) => b - a
-      )
-    );
+  // Data
+  const [alumni, setAlumni] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [companyStats, setCompanyStats] = useState([]);
+  const [yearStats, setYearStats] = useState([]);
+  const [insightsLoading, setInsightsLoading] = useState(false);
 
-    setLocations([
-      ...new Set(data.map((u) => u.location).filter(Boolean)),
-    ]);
+  /* ---------- fetch directory (filters change) ---------- */
+  useEffect(() => {
+    const ctrl = new AbortController();
+
+    const run = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (debouncedSearch.trim()) params.set("name", debouncedSearch.trim());
+        if (year) params.set("year", year);
+        if (debouncedCompany.trim()) params.set("company", debouncedCompany.trim());
+        if (debouncedLocation.trim()) params.set("location", debouncedLocation.trim());
+        if (debouncedDomain.trim()) params.set("domain", debouncedDomain.trim());
+
+        const { data } = await API.get(`/alumni?${params.toString()}`, {
+          signal: ctrl.signal,
+        });
+        setAlumni(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (err?.code !== "ERR_CANCELED" && err?.name !== "CanceledError") {
+          console.error("Alumni fetch failed:", err);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    run();
+    return () => ctrl.abort();
+  }, [debouncedSearch, year, debouncedCompany, debouncedLocation, debouncedDomain]);
+
+  /* ---------- fetch insights lazily when tab opens ---------- */
+  useEffect(() => {
+    if (view !== "insights" && view !== "company") return;
+    if (companyStats.length > 0 && (view !== "insights" || yearStats.length > 0)) return;
+
+    const run = async () => {
+      setInsightsLoading(true);
+      try {
+        const calls = [API.get("/alumni/stats")];
+        if (view === "insights") calls.push(API.get("/alumni/year-stats"));
+        const results = await Promise.all(calls);
+        setCompanyStats(results[0].data || []);
+        if (results[1]) setYearStats(results[1].data || []);
+      } catch (err) {
+        console.error("Alumni stats failed:", err);
+      } finally {
+        setInsightsLoading(false);
+      }
+    };
+    run();
+  }, [view, companyStats.length, yearStats.length]);
+
+  /* ---------- derived: unique years + locations for dropdowns ---------- */
+  const years = useMemo(() => {
+    const s = new Set();
+    alumni.forEach((u) => u.graduationYear && s.add(u.graduationYear));
+    return [...s].sort((a, b) => b - a);
+  }, [alumni]);
+
+  const hasAnyFilter =
+    search || year || company || location || domain;
+
+  const clearFilters = () => {
+    setSearch("");
+    setYear("");
+    setCompany("");
+    setLocation("");
+    setDomain("");
   };
 
-  // ================= SOCKET =================
-  useEffect(() => {
-    socket.on("onlineUsers", (users) => {
-      setOnlineUsers(users);
-    });
+  /* ===================== RENDER ===================== */
 
-    return () => socket.off("onlineUsers");
-  }, []);
-
-  useEffect(() => {
-    fetchAlumni();
-  }, []);
-
-  // ================= MULTI FILTER LOGIC =================
-  const alumni = useMemo(() => {
-    return allAlumni.filter((u) => {
-      const matchesSearch =
-        !search ||
-        u.name?.toLowerCase().includes(search.toLowerCase()) ||
-        u.company?.toLowerCase().includes(search.toLowerCase());
-
-      const matchesCompany =
-        selectedCompanies.length === 0 ||
-        selectedCompanies.includes(u.company);
-
-      const matchesYear =
-        selectedYears.length === 0 ||
-        selectedYears.includes(String(u.graduationYear));
-
-      const matchesLocation =
-        selectedLocations.length === 0 ||
-        selectedLocations.includes(u.location);
-
-      return (
-        matchesSearch &&
-        matchesCompany &&
-        matchesYear &&
-        matchesLocation
-      );
-    });
-  }, [
-    allAlumni,
-    search,
-    selectedCompanies,
-    selectedYears,
-    selectedLocations,
-  ]);
-
-  // ================= TOGGLE HELPERS =================
-  const toggleSelection = (value, state, setState) => {
-    if (!value) return;
-
-    if (state.includes(value)) {
-      setState(state.filter((v) => v !== value));
-    } else {
-      setState([...state, value]);
-    }
-  };
-
-  // ================= CHIP UI =================
-  const FilterChips = ({ items, remove }) => (
-    <div className="flex flex-wrap gap-2 mt-3">
-      {items.map((item, i) => (
-        <div
-          key={i}
-          className="
-            flex items-center gap-2
-            px-3 py-1 rounded-full
-            bg-cyan-500/10
-            border border-cyan-400/20
-            text-cyan-300 text-sm
-          "
-        >
-          {item}
-
-          <button onClick={() => remove(item)}>
-            <X size={14} />
-          </button>
+  return (
+    <div className="pb-10">
+      {/* Header */}
+      <header className="pt-4 pb-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="font-display font-extrabold text-2xl sm:text-[28px] text-ink tracking-tight">
+              Alumni Network
+            </h1>
+            <p className="text-sm text-muted mt-1">
+              {loading ? "Loading…" : `${alumni.length} alumni`}
+              {hasAnyFilter && !loading && " matching your filters"}
+            </p>
+          </div>
         </div>
+
+        {/* View tabs */}
+        <div className="mt-5 inline-flex p-1 rounded-xl bg-surface-2 border border-line">
+          {VIEWS.map((v) => {
+            const Icon = v.icon;
+            const active = view === v.key;
+            return (
+              <button
+                key={v.key}
+                onClick={() => setView(v.key)}
+                className={`inline-flex items-center gap-2 px-3 sm:px-4 h-9 rounded-lg text-sm font-semibold transition-colors ${
+                  active
+                    ? "bg-surface text-ink shadow-sm"
+                    : "text-muted hover:text-ink"
+                }`}
+              >
+                <Icon size={16} />
+                <span className="hidden sm:inline">{v.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </header>
+
+      {/* Filter bar (only for grid view) */}
+      {view === "grid" && (
+        <FilterBar
+          search={search}
+          setSearch={setSearch}
+          year={year}
+          setYear={setYear}
+          company={company}
+          setCompany={setCompany}
+          location={location}
+          setLocation={setLocation}
+          domain={domain}
+          setDomain={setDomain}
+          years={years}
+          showFilters={showFilters}
+          setShowFilters={setShowFilters}
+          hasAnyFilter={hasAnyFilter}
+          clearFilters={clearFilters}
+        />
+      )}
+
+      {/* Views */}
+      {view === "grid" && (
+        <GridView
+          loading={loading}
+          alumni={alumni}
+          onlineUsers={onlineUsers}
+          onOpen={(u) => navigate(`/profile/${u._id}`)}
+          hasAnyFilter={hasAnyFilter}
+          clearFilters={clearFilters}
+        />
+      )}
+      {view === "company" && (
+        <CompanyView
+          loading={insightsLoading}
+          companyStats={companyStats}
+          onOpen={(c) => navigate(`/alumni/company/${c._id}`)}
+        />
+      )}
+      {view === "insights" && (
+        <InsightsView
+          loading={insightsLoading}
+          companyStats={companyStats}
+          yearStats={yearStats}
+        />
+      )}
+    </div>
+  );
+};
+
+/* ==================== FILTER BAR ==================== */
+const FilterBar = ({
+  search,
+  setSearch,
+  year,
+  setYear,
+  company,
+  setCompany,
+  location,
+  setLocation,
+  domain,
+  setDomain,
+  years,
+  showFilters,
+  setShowFilters,
+  hasAnyFilter,
+  clearFilters,
+}) => (
+  <div className="card p-3 sm:p-4 mb-5">
+    <div className="flex items-center gap-2 flex-wrap">
+      <div className="relative flex-1 min-w-[220px]">
+        <Search
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+        />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search alumni by name…"
+          className="input pl-9"
+        />
+      </div>
+      <button
+        type="button"
+        onClick={() => setShowFilters((s) => !s)}
+        className="inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-surface-2 border border-line text-ink text-sm font-semibold hover:bg-surface transition-colors"
+      >
+        <Filter size={15} />
+        Filters
+        {hasAnyFilter && (
+          <span className="w-1.5 h-1.5 rounded-full bg-brand" aria-hidden />
+        )}
+      </button>
+      {hasAnyFilter && (
+        <button
+          onClick={clearFilters}
+          className="inline-flex items-center gap-1 h-10 px-3 rounded-xl text-sm text-muted hover:text-ink"
+        >
+          <X size={14} />
+          Clear
+        </button>
+      )}
+    </div>
+
+    {showFilters && (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+        <SelectInput
+          label="Graduation year"
+          value={year}
+          onChange={setYear}
+          options={[
+            { value: "", label: "Any year" },
+            ...years.map((y) => ({ value: String(y), label: String(y) })),
+          ]}
+        />
+        <TextInput
+          label="Company"
+          value={company}
+          onChange={setCompany}
+          placeholder="e.g. Google"
+        />
+        <TextInput
+          label="Location"
+          value={location}
+          onChange={setLocation}
+          placeholder="e.g. Bangalore"
+        />
+        <TextInput
+          label="Domain / role"
+          value={domain}
+          onChange={setDomain}
+          placeholder="e.g. Backend"
+        />
+      </div>
+    )}
+  </div>
+);
+
+const TextInput = ({ label, value, onChange, placeholder }) => (
+  <label className="block">
+    <span className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+      {label}
+    </span>
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="input"
+    />
+  </label>
+);
+
+const SelectInput = ({ label, value, onChange, options }) => (
+  <label className="block">
+    <span className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+      {label}
+    </span>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="input appearance-none bg-no-repeat bg-right pr-9"
+      style={{
+        backgroundImage:
+          "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"%23888\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"6 9 12 15 18 9\"/></svg>')",
+        backgroundPosition: "right 12px center",
+      }}
+    >
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  </label>
+);
+
+/* ==================== GRID VIEW ==================== */
+const GridView = ({
+  loading,
+  alumni,
+  onlineUsers,
+  onOpen,
+  hasAnyFilter,
+  clearFilters,
+}) => {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="card p-5 space-y-4">
+            <div className="flex items-center gap-3">
+              <Skeleton circle className="w-12 h-12" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            </div>
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-5/6" />
+            <Skeleton className="h-9 w-full" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (alumni.length === 0) {
+    return (
+      <EmptyState
+        icon={Users}
+        title="No alumni found"
+        description={
+          hasAnyFilter
+            ? "Try widening your filters — different year, company, or location."
+            : "No alumni accounts have been approved yet."
+        }
+        action={
+          hasAnyFilter ? (
+            <Button variant="secondary" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          ) : null
+        }
+      />
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+      {alumni.map((u) => (
+        <AlumniCard
+          key={u._id}
+          user={u}
+          online={onlineUsers.includes(u._id)}
+          onOpen={onOpen}
+        />
       ))}
     </div>
   );
+};
 
-  return (
-    <div className="relative min-h-screen pb-10 overflow-hidden">
-
-      {/* BACKGROUND */}
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-purple-500/10 blur-[160px] rounded-full"></div>
-      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-cyan-500/10 blur-[160px] rounded-full"></div>
-
-      <div className="relative z-10 max-w-7xl mx-auto space-y-8">
-
-        {/* ================= HEADER ================= */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-
-          <div>
-            <h1
-              className="
-              text-4xl md:text-5xl
-              font-black
-              tracking-tight
-              bg-gradient-to-r
-              from-purple-400
-              via-pink-400
-              to-cyan-400
-              bg-clip-text
-              text-transparent
-            "
-            >
-              Alumni Network
-            </h1>
-
-            <p className="text-gray-400 mt-2 text-sm md:text-base">
-              Connect with alumni working across the globe 🌍
-            </p>
-          </div>
-
-          {/* STATS */}
-          <div className="flex gap-4">
-
-            <div
-              className="
-              px-5 py-3 rounded-2xl
-              bg-white/[0.04]
-              backdrop-blur-xl
-              border border-white/10
-              min-w-[110px]
-            "
-            >
-              <p className="text-2xl font-bold text-white">
-                {alumni.length}
-              </p>
-
-              <p className="text-xs text-gray-400">
-                Alumni
-              </p>
-            </div>
-
-            <div
-              className="
-              px-5 py-3 rounded-2xl
-              bg-white/[0.04]
-              backdrop-blur-xl
-              border border-white/10
-              min-w-[110px]
-            "
-            >
-              <p className="text-2xl font-bold text-green-400">
-                {onlineUsers.length}
-              </p>
-
-              <p className="text-xs text-gray-400">
-                Online
-              </p>
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* ================= FILTER BAR ================= */}
-        <div
-          className="
-          p-5 rounded-[30px]
-          bg-white/[0.04]
-          backdrop-blur-2xl
-          border border-white/10
-        "
-        >
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-
-            {/* SEARCH */}
-            <div className="relative">
-
-              <Search
-                size={18}
-                className="absolute left-3 top-3.5 text-gray-400"
-              />
-
-              <input
-                type="text"
-                placeholder="Search alumni..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="
-                  w-full pl-10 pr-4 py-3 rounded-2xl
-                  bg-[#0F172A]
-                  border border-white/10
-                  text-white
-                  focus:outline-none
-                  focus:ring-2 focus:ring-purple-500
-                "
-              />
-
-            </div>
-
-            {/* COMPANY */}
-            <select
-              onChange={(e) =>
-                toggleSelection(
-                  e.target.value,
-                  selectedCompanies,
-                  setSelectedCompanies
-                )
-              }
-              className="
-                px-4 py-3 rounded-2xl
-                bg-[#0F172A]
-                border border-white/10
-                text-white
-              "
-            >
-              <option value="">Select Company</option>
-
-              {companies.map((c, i) => (
-                <option key={i} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-
-            {/* LOCATION */}
-            <select
-              onChange={(e) =>
-                toggleSelection(
-                  e.target.value,
-                  selectedLocations,
-                  setSelectedLocations
-                )
-              }
-              className="
-                px-4 py-3 rounded-2xl
-                bg-[#0F172A]
-                border border-white/10
-                text-white
-              "
-            >
-              <option value="">Select Location</option>
-
-              {locations.map((l, i) => (
-                <option key={i} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
-
-            {/* YEAR */}
-            <select
-              onChange={(e) =>
-                toggleSelection(
-                  String(e.target.value),
-                  selectedYears,
-                  setSelectedYears
-                )
-              }
-              className="
-                px-4 py-3 rounded-2xl
-                bg-[#0F172A]
-                border border-white/10
-                text-white
-              "
-            >
-              <option value="">Select Year</option>
-
-              {years.map((y, i) => (
-                <option key={i} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-
-          </div>
-
-          {/* SELECTED FILTER CHIPS */}
-          <FilterChips
-            items={[
-              ...selectedCompanies,
-              ...selectedLocations,
-              ...selectedYears,
-            ]}
-            remove={(value) => {
-              setSelectedCompanies((prev) =>
-                prev.filter((v) => v !== value)
-              );
-
-              setSelectedLocations((prev) =>
-                prev.filter((v) => v !== value)
-              );
-
-              setSelectedYears((prev) =>
-                prev.filter((v) => v !== value)
-              );
-            }}
+const AlumniCard = ({ user: u, online, onOpen }) => (
+  <div className="card p-5 flex flex-col gap-4 hover:border-brand/40 transition-colors">
+    <div className="flex items-start gap-3">
+      <div
+        className="relative cursor-pointer shrink-0"
+        onClick={() => onOpen(u)}
+      >
+        <Avatar user={u} size={48} />
+        {online && (
+          <span
+            className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-surface"
+            aria-label="online"
           />
-
-        </div>
-
-        {/* ================= GRID ================= */}
-        <div
-          className="
-          grid
-          sm:grid-cols-2
-          xl:grid-cols-3
-          2xl:grid-cols-4
-          gap-5
-        "
-        >
-
-          {alumni.map((u) => (
-            <motion.div
-              key={u._id}
-              whileHover={{ y: -6 }}
-              transition={{ duration: 0.25 }}
-              onClick={() => navigate(`/profile/${u._id}`)}
-              className="
-                relative overflow-hidden
-                rounded-[32px]
-                bg-[#081121]/95
-                border border-white/10
-                backdrop-blur-2xl
-                shadow-[0_15px_40px_rgba(0,0,0,0.45)]
-                p-5 group
-                cursor-pointer
-              "
-            >
-
-              {/* TOP */}
-              <div className="flex items-start justify-between">
-
-                <div className="flex gap-3 min-w-0">
-
-                  <div className="relative shrink-0">
-
-                    <div
-                      className="
-                      p-[2px]
-                      rounded-2xl
-                      bg-gradient-to-br
-                      from-cyan-400
-                      via-purple-500
-                      to-pink-500
-                    "
-                    >
-
-                      <img
-                        src={
-                          u.profilePic ||
-                          "https://via.placeholder.com/100"
-                        }
-                        className="
-                          w-14 h-14
-                          rounded-2xl
-                          object-cover
-                          bg-[#081121]
-                        "
-                      />
-
-                    </div>
-
-                    {onlineUsers.includes(u._id) && (
-                      <span
-                        className="
-                        absolute -bottom-1 -right-1
-                        w-4 h-4 rounded-full
-                        bg-green-500
-                        border-2 border-[#081121]
-                      "
-                      ></span>
-                    )}
-
-                  </div>
-
-                  <div className="min-w-0">
-
-                    <div className="flex items-center gap-2">
-
-                      <h3 className="text-lg font-bold text-white truncate">
-                        {u.name}
-                      </h3>
-
-                      {u.isVerified && (
-                        <ShieldCheck
-                          size={16}
-                          className="text-cyan-400"
-                        />
-                      )}
-
-                    </div>
-
-                    <p className="text-xs text-cyan-300/80 mt-1">
-                      Verified Alumni
-                    </p>
-
-                    <div
-                      className="
-                      mt-3 flex items-center gap-2
-                      text-sm text-gray-300
-                    "
-                    >
-                      <BriefcaseBusiness
-                        size={14}
-                        className="text-purple-400"
-                      />
-
-                      <span className="truncate">
-                        {u.company || "N/A"}
-                      </span>
-                    </div>
-
-                  </div>
-
-                </div>
-
-                <div
-                  className="
-                  p-2 rounded-xl
-                  bg-gradient-to-br
-                  from-yellow-500/10
-                  to-orange-500/10
-                  border border-yellow-500/10
-                  text-yellow-400
-                "
-                >
-                  <Sparkles size={15} />
-                </div>
-
-              </div>
-
-              {/* MIDDLE */}
-              <div className="mt-5 grid grid-cols-2 gap-3">
-
-                <div
-                  className="
-                  rounded-2xl
-                  bg-white/[0.03]
-                  border border-white/[0.06]
-                  p-3
-                "
-                >
-
-                  <div className="flex items-center gap-2">
-
-                    <GraduationCap
-                      size={14}
-                      className="text-cyan-400"
-                    />
-
-                    <p className="text-[11px] text-gray-500">
-                      Graduation
-                    </p>
-
-                  </div>
-
-                  <p className="mt-2 text-sm font-semibold text-white">
-                    {u.graduationYear || "N/A"}
-                  </p>
-
-                </div>
-
-                <div
-                  className="
-                  rounded-2xl
-                  bg-white/[0.03]
-                  border border-white/[0.06]
-                  p-3
-                "
-                >
-
-                  <div className="flex items-center gap-2">
-
-                    <MapPin
-                      size={14}
-                      className="text-pink-400"
-                    />
-
-                    <p className="text-[11px] text-gray-500">
-                      Location
-                    </p>
-
-                  </div>
-
-                  <p className="mt-2 text-sm font-semibold text-white truncate">
-                    {u.location || "N/A"}
-                  </p>
-
-                </div>
-
-              </div>
-
-              {/* ACTIONS */}
-              <div className="mt-5 flex gap-3">
-
-                <div
-                  className="flex-1"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <ConnectionButton userId={u._id} />
-                </div>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/chat?userId=${u._id}`);
-                  }}
-                  className="
-                    w-12 h-12 rounded-2xl
-                    bg-white/[0.04]
-                    border border-white/[0.08]
-                    hover:border-cyan-400/40
-                    transition-all
-                    flex items-center justify-center
-                    text-white
-                  "
-                >
-                  <MessageCircle size={18} />
-                </button>
-
-              </div>
-
-            </motion.div>
-          ))}
-
-        </div>
-
+        )}
       </div>
 
+      <div className="min-w-0 flex-1">
+        <div
+          className="flex items-center gap-1.5 cursor-pointer"
+          onClick={() => onOpen(u)}
+        >
+          <h3 className="font-semibold text-ink truncate">{u.name}</h3>
+          {(u.verifiedBadge || u.isVerified) && (
+            <ShieldCheck
+              size={14}
+              className="text-brand shrink-0"
+              aria-label="Verified"
+            />
+          )}
+        </div>
+        <p className="text-xs text-muted mt-0.5">
+          {u.position || u.designation || "Alumni"}
+        </p>
+      </div>
+    </div>
+
+    <div className="space-y-1.5 text-sm">
+      {u.company && (
+        <div className="flex items-center gap-2 text-ink">
+          <BriefcaseBusiness size={14} className="text-muted shrink-0" />
+          <span className="truncate">{u.company}</span>
+        </div>
+      )}
+      {u.graduationYear && (
+        <div className="flex items-center gap-2 text-ink">
+          <GraduationCap size={14} className="text-muted shrink-0" />
+          <span>Batch of {u.graduationYear}</span>
+        </div>
+      )}
+      {u.location && (
+        <div className="flex items-center gap-2 text-ink">
+          <MapPin size={14} className="text-muted shrink-0" />
+          <span className="truncate">{u.location}</span>
+        </div>
+      )}
+    </div>
+
+    {Array.isArray(u.skills) && u.skills.length > 0 && (
+      <div className="flex flex-wrap gap-1.5">
+        {u.skills.slice(0, 3).map((s) => (
+          <Badge key={s} variant="neutral">
+            {s}
+          </Badge>
+        ))}
+        {u.skills.length > 3 && (
+          <Badge variant="neutral">+{u.skills.length - 3}</Badge>
+        )}
+      </div>
+    )}
+
+    <div className="flex gap-2 mt-auto pt-1">
+      <div className="flex-1">
+        <ConnectionButton userId={u._id} />
+      </div>
+      <button
+        className="icon-btn border border-line"
+        aria-label="Message"
+        title="Message"
+        onClick={() => (window.location.href = `/chat`)}
+      >
+        <MessageCircle size={16} />
+      </button>
+    </div>
+  </div>
+);
+
+/* ==================== BY-COMPANY VIEW ==================== */
+const CompanyView = ({ loading, companyStats, onOpen }) => {
+  if (loading && companyStats.length === 0) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-24" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!companyStats.length) {
+    return (
+      <EmptyState
+        icon={Building2}
+        title="No company data yet"
+        description="Alumni need to add their current company to their profile for this view to populate."
+      />
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {companyStats.map((c) => (
+        <button
+          key={c._id}
+          onClick={() => onOpen(c)}
+          className="card p-5 text-left hover:border-brand/40 hover:shadow-md transition-all group"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="font-semibold text-ink truncate capitalize">
+                {c.label || c._id}
+              </h3>
+              <p className="text-xs text-muted mt-0.5">
+                {c.count} {c.count === 1 ? "alumnus" : "alumni"}
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-brand-soft flex items-center justify-center shrink-0">
+              <Building2 size={20} className="text-brand" />
+            </div>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+};
+
+/* ==================== INSIGHTS VIEW ==================== */
+const BAR_COLORS = [
+  "var(--brand)",
+  "var(--brand-2)",
+  "#F472B6",
+  "#F59E0B",
+  "#10B981",
+  "#6366F1",
+  "#EC4899",
+  "#06B6D4",
+  "#F97316",
+  "#8B5CF6",
+];
+
+const InsightsView = ({ loading, companyStats, yearStats }) => {
+  if (loading && companyStats.length === 0 && yearStats.length === 0) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Skeleton className="h-80" />
+        <Skeleton className="h-80" />
+      </div>
+    );
+  }
+
+  if (!companyStats.length && !yearStats.length) {
+    return (
+      <EmptyState
+        icon={BarChart3}
+        title="Not enough data yet"
+        description="Charts will populate once alumni add their company and graduation year."
+      />
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="card p-5">
+        <h3 className="font-semibold text-ink mb-1">Top companies</h3>
+        <p className="text-xs text-muted mb-4">
+          Number of approved alumni per company (top 10).
+        </p>
+        {companyStats.length === 0 ? (
+          <p className="text-sm text-muted">No company data yet.</p>
+        ) : (
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={companyStats.map((s) => ({
+                  name: s.label || s._id,
+                  count: s.count,
+                }))}
+                layout="vertical"
+                margin={{ top: 4, right: 12, left: 4, bottom: 4 }}
+              >
+                <XAxis
+                  type="number"
+                  allowDecimals={false}
+                  tick={{ fill: "var(--muted)", fontSize: 11 }}
+                  axisLine={{ stroke: "var(--line)" }}
+                  tickLine={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tick={{ fill: "var(--ink)", fontSize: 12 }}
+                  axisLine={{ stroke: "var(--line)" }}
+                  tickLine={false}
+                  width={120}
+                />
+                <Tooltip
+                  cursor={{ fill: "var(--surface-2)" }}
+                  contentStyle={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--line)",
+                    borderRadius: 10,
+                    fontSize: 12,
+                    color: "var(--ink)",
+                  }}
+                />
+                <Bar dataKey="count" radius={[0, 6, 6, 0]}>
+                  {companyStats.map((_, i) => (
+                    <Cell
+                      key={i}
+                      fill={BAR_COLORS[i % BAR_COLORS.length]}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      <div className="card p-5">
+        <h3 className="font-semibold text-ink mb-1">
+          Graduation year distribution
+        </h3>
+        <p className="text-xs text-muted mb-4">
+          Approved alumni by graduation year.
+        </p>
+        {yearStats.length === 0 ? (
+          <p className="text-sm text-muted">No year data yet.</p>
+        ) : (
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={yearStats}
+                margin={{ top: 4, right: 12, left: 4, bottom: 4 }}
+              >
+                <XAxis
+                  dataKey="year"
+                  tick={{ fill: "var(--muted)", fontSize: 11 }}
+                  axisLine={{ stroke: "var(--line)" }}
+                  tickLine={false}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tick={{ fill: "var(--muted)", fontSize: 11 }}
+                  axisLine={{ stroke: "var(--line)" }}
+                  tickLine={false}
+                />
+                <Tooltip
+                  cursor={{ fill: "var(--surface-2)" }}
+                  contentStyle={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--line)",
+                    borderRadius: 10,
+                    fontSize: 12,
+                    color: "var(--ink)",
+                  }}
+                />
+                <Bar
+                  dataKey="count"
+                  fill="var(--brand)"
+                  radius={[6, 6, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

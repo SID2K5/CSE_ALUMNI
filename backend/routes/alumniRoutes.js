@@ -2,6 +2,7 @@ import express from "express";
 import {
   getAlumni,
   getCompanyStats,
+  getYearStats,
   getAlumniByCompany,
 } from "../controllers/alumniController.js";
 
@@ -9,11 +10,14 @@ import protect from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// 🔍 Get all alumni (filters: company, year, location)
+// 🔍 Get alumni (filters: name, company, year, location, domain, skills)
 router.get("/", protect, getAlumni);
 
-// 📊 Top companies stats
+// 📊 Top companies by alumni count
 router.get("/stats", protect, getCompanyStats);
+
+// 📈 Graduation-year distribution
+router.get("/year-stats", protect, getYearStats);
 
 // 🏢 Company-wise alumni
 router.get("/company/:company", protect, getAlumniByCompany);
