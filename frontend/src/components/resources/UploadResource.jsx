@@ -1,332 +1,269 @@
 import { useState } from "react";
-import API from "../../services/api";
 import toast from "react-hot-toast";
-import {
-  UploadCloud,
-  FileText,
-  Tag,
-  BookOpen,
-} from "lucide-react";
-import { motion } from "framer-motion";
+import { UploadCloud, FileText, X } from "lucide-react";
 
-const UploadResource = ({ refresh }) => {
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    semester: "",
-    type: "notes",
+import API from "../../services/api";
+import { Button, Modal } from "../ui";
 
-    // ✅ NEW
-    subject: "",
-    tags: "",
-  });
+/* =====================================================
+   UPLOAD RESOURCE — modal form (admin + teacher)
+   Preserves existing POST /api/resources contract (multipart).
+===================================================== */
 
+const CATEGORIES = [
+  { value: "notes", label: "Notes" },
+  { value: "pyq", label: "Previous Year Questions" },
+  { value: "assignment", label: "Assignment" },
+  { value: "study-material", label: "Study Material" },
+  { value: "other", label: "Other" },
+];
+
+const SEMESTERS = [1, 2, 3, 4, 5, 6, 7, 8];
+const MAX_MB = 30;
+const MAX_BYTES = MAX_MB * 1024 * 1024;
+
+const emptyForm = {
+  title: "",
+  description: "",
+  semester: "",
+  type: "notes",
+  subject: "",
+  tags: "",
+};
+
+const UploadResource = ({ open, onClose, onUploaded }) => {
+  const [form, setForm] = useState(emptyForm);
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
 
-  const submit = async () => {
-    if (!file) {
-      return toast.error("Please select a PDF file");
-    }
+  const set = (k) => (e) =>
+    setForm((p) => ({ ...p, [k]: e.target.value }));
 
-    // ✅ PDF CHECK
-    if (file.type !== "application/pdf") {
+  const resetAll = () => {
+    setForm(emptyForm);
+    setFile(null);
+  };
+
+  const pickFile = (f) => {
+    if (!f) return;
+    if (f.type !== "application/pdf") {
       return toast.error("Only PDF files are allowed");
     }
-
-    // ✅ SIZE CHECK
-    if (file.size > 30 * 1024 * 1024) {
-      return toast.error("File must be less than 30MB");
+    if (f.size > MAX_BYTES) {
+      return toast.error(`File must be under ${MAX_MB} MB`);
     }
+    setFile(f);
+  };
 
-    // ✅ REQUIRED FIELDS
-    if (
-      !form.title.trim() ||
-      !form.semester ||
-      !form.subject.trim()
-    ) {
-      return toast.error(
-        "Title, Subject and Semester are required"
-      );
-    }
+  const onDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    pickFile(e.dataTransfer?.files?.[0]);
+  };
 
-    // ✅ SEM CHECK
-    if (isNaN(form.semester)) {
-      return toast.error("Semester must be a number");
-    }
+  const handleSubmit = async (e) => {
+    e?.preventDefault?.();
+    if (!file) return toast.error("Please select a PDF file");
+    if (!form.title.trim()) return toast.error("Title is required");
+    if (!form.semester) return toast.error("Semester is required");
+    if (!form.subject.trim()) return toast.error("Subject is required");
+
+    const fd = new FormData();
+    fd.append("title", form.title.trim());
+    fd.append("description", form.description.trim());
+    fd.append("semester", Number(form.semester));
+    fd.append("type", form.type);
+    fd.append("subject", form.subject.trim());
+    fd.append("tags", form.tags.trim());
+    fd.append("file", file);
 
     try {
       setLoading(true);
-
-      const data = new FormData();
-
-      // EXISTING
-      data.append("title", form.title.trim());
-      data.append("description", form.description.trim());
-      data.append("semester", Number(form.semester));
-      data.append("type", form.type);
-
-      // ✅ NEW
-      data.append("subject", form.subject.trim());
-      data.append("tags", form.tags.trim());
-
-      // FILE
-      data.append("file", file);
-
-      await API.post("/resources", data);
-
-      toast.success("Resource uploaded 🚀");
-
-      // RESET
-      setForm({
-        title: "",
-        description: "",
-        semester: "",
-        type: "notes",
-
-        // ✅ NEW RESET
-        subject: "",
-        tags: "",
-      });
-
-      setFile(null);
-
-      // REFRESH
-      if (typeof refresh === "function") {
-        refresh();
-      }
-
+      await API.post("/resources", fd);
+      toast.success("Resource uploaded");
+      resetAll();
+      onUploaded?.();
     } catch (err) {
-      console.error(
-        "UPLOAD ERROR:",
-        err.response?.data || err.message
-      );
-
-      toast.error(
-        err.response?.data?.message ||
-          "Upload failed (check backend)"
-      );
-
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Upload failed");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleClose = () => {
+    if (loading) return;
+    resetAll();
+    onClose?.();
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="
-        glass p-6 rounded-2xl space-y-5
-        border border-gray-300 dark:border-gray-700
-        shadow-lg
-      "
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="Upload resource"
+      size="lg"
+      footer={
+        <div className="flex gap-2 justify-end">
+          <Button variant="ghost" onClick={handleClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            loading={loading}
+            iconLeft={UploadCloud}
+          >
+            Upload
+          </Button>
+        </div>
+      }
     >
-
-      {/* HEADER */}
-      <h2 className="text-xl font-semibold flex items-center gap-2 text-black dark:text-white">
-        <UploadCloud size={20} />
-        Upload Resource
-      </h2>
-
-      {/* GRID */}
-      <div className="grid md:grid-cols-2 gap-4">
-
-        {/* TITLE */}
-        <input
-          value={form.title}
-          placeholder="Title"
-          onChange={(e) =>
-            setForm({
-              ...form,
-              title: e.target.value,
-            })
-          }
-          className="
-            p-3 rounded-xl
-            bg-gray-100 dark:bg-gray-800
-            text-black dark:text-white
-            focus:ring-2 focus:ring-purple-500
-            outline-none
-          "
-        />
-
-        {/* SEM */}
-        <input
-          value={form.semester}
-          placeholder="Semester (e.g. 3)"
-          onChange={(e) =>
-            setForm({
-              ...form,
-              semester: e.target.value,
-            })
-          }
-          className="
-            p-3 rounded-xl
-            bg-gray-100 dark:bg-gray-800
-            text-black dark:text-white
-            focus:ring-2 focus:ring-purple-500
-            outline-none
-          "
-        />
-
-        {/* ✅ SUBJECT */}
-        <div className="relative">
-
-          <BookOpen
-            size={18}
-            className="absolute left-3 top-3.5 text-gray-400"
-          />
-
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* FILE */}
+        <label
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={onDrop}
+          className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl p-6 cursor-pointer transition-colors ${
+            dragOver
+              ? "border-brand bg-brand-soft"
+              : "border-line hover:border-brand/60 bg-surface-2"
+          }`}
+        >
           <input
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(e) => pickFile(e.target.files?.[0])}
+          />
+          {file ? (
+            <div className="flex items-center gap-3 w-full">
+              <FileText size={20} className="text-brand shrink-0" />
+              <div className="min-w-0 flex-1 text-left">
+                <div className="font-medium text-ink truncate">{file.name}</div>
+                <div className="text-xs text-muted">
+                  {(file.size / 1024 / 1024).toFixed(2)} MB
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setFile(null);
+                }}
+                className="icon-btn !w-8 !h-8 border border-line"
+                aria-label="Remove file"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="w-10 h-10 rounded-full bg-brand-soft flex items-center justify-center">
+                <UploadCloud size={18} className="text-brand" />
+              </div>
+              <div className="text-center">
+                <div className="text-sm font-semibold text-ink">
+                  Drop a PDF or click to browse
+                </div>
+                <div className="text-xs text-muted mt-0.5">
+                  Max {MAX_MB} MB · PDF only
+                </div>
+              </div>
+            </>
+          )}
+        </label>
+
+        {/* FIELDS */}
+        <div>
+          <Label>Title *</Label>
+          <input
+            className="input"
+            value={form.title}
+            onChange={set("title")}
+            placeholder="e.g. Unit 3 — Trees and Graphs"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <Label>Semester *</Label>
+            <select
+              className="input"
+              value={form.semester}
+              onChange={set("semester")}
+            >
+              <option value="">Choose semester…</option>
+              {SEMESTERS.map((s) => (
+                <option key={s} value={s}>
+                  Semester {s}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label>Category</Label>
+            <select
+              className="input"
+              value={form.type}
+              onChange={set("type")}
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <Label>Subject *</Label>
+          <input
+            className="input"
             value={form.subject}
-            placeholder="Subject (DBMS, OS, CN...)"
-            onChange={(e) =>
-              setForm({
-                ...form,
-                subject: e.target.value,
-              })
-            }
-            className="
-              w-full pl-10 p-3 rounded-xl
-              bg-gray-100 dark:bg-gray-800
-              text-black dark:text-white
-              focus:ring-2 focus:ring-purple-500
-              outline-none
-            "
+            onChange={set("subject")}
+            placeholder="e.g. Data Structures"
           />
-
         </div>
 
-        {/* ✅ TAGS */}
-        <div className="relative">
-
-          <Tag
-            size={18}
-            className="absolute left-3 top-3.5 text-gray-400"
+        <div>
+          <Label>Description</Label>
+          <textarea
+            className="input"
+            rows={3}
+            value={form.description}
+            onChange={set("description")}
+            placeholder="Short description (optional)"
           />
+        </div>
 
+        <div>
+          <Label>Tags</Label>
           <input
+            className="input"
             value={form.tags}
-            placeholder="Tags (sql, joins, normalization)"
-            onChange={(e) =>
-              setForm({
-                ...form,
-                tags: e.target.value,
-              })
-            }
-            className="
-              w-full pl-10 p-3 rounded-xl
-              bg-gray-100 dark:bg-gray-800
-              text-black dark:text-white
-              focus:ring-2 focus:ring-purple-500
-              outline-none
-            "
+            onChange={set("tags")}
+            placeholder="Comma-separated, e.g. trees, bfs, dfs"
           />
-
-        </div>
-
-      </div>
-
-      {/* DESCRIPTION */}
-      <textarea
-        value={form.description}
-        placeholder="Description..."
-        onChange={(e) =>
-          setForm({
-            ...form,
-            description: e.target.value,
-          })
-        }
-        className="
-          w-full p-3 rounded-xl
-          bg-gray-100 dark:bg-gray-800
-          text-black dark:text-white
-          focus:ring-2 focus:ring-purple-500
-          outline-none
-        "
-      />
-
-      {/* TYPE */}
-      <select
-        value={form.type}
-        onChange={(e) =>
-          setForm({
-            ...form,
-            type: e.target.value,
-          })
-        }
-        className="
-          w-full p-3 rounded-xl
-          bg-gray-100 dark:bg-gray-800
-          text-black dark:text-white
-        "
-      >
-        <option value="notes">📚 Notes</option>
-        <option value="pyq">📝 PYQ</option>
-      </select>
-
-      {/* FILE */}
-      <label
-        className="
-          flex flex-col items-center justify-center
-          border-2 border-dashed
-          border-gray-400 dark:border-gray-600
-          rounded-xl p-6 cursor-pointer
-          hover:border-purple-500
-          transition
-        "
-      >
-
-        <FileText
-          size={30}
-          className="mb-2 text-gray-500"
-        />
-
-        <p className="text-sm text-gray-500 text-center">
-          {file
-            ? file.name
-            : "Click to upload PDF"}
-        </p>
-
-        {/* FILE SIZE */}
-        {file && (
-          <p className="text-xs text-gray-400 mt-1">
-            {(file.size / (1024 * 1024)).toFixed(2)} MB
+          <p className="text-xs text-muted mt-1">
+            Help students find this resource by topic.
           </p>
-        )}
-
-        <input
-          type="file"
-          accept="application/pdf"
-          className="hidden"
-          onChange={(e) =>
-            setFile(e.target.files[0])
-          }
-        />
-
-      </label>
-
-      {/* BUTTON */}
-      <button
-        onClick={submit}
-        disabled={loading}
-        className="
-          w-full py-3 rounded-xl
-          bg-gradient-to-r from-purple-500 to-cyan-400
-          text-white font-semibold
-          hover:scale-[1.02]
-          transition-all shadow-md
-          disabled:opacity-50
-        "
-      >
-        {loading
-          ? "Uploading..."
-          : "Upload Resource 🚀"}
-      </button>
-
-    </motion.div>
+        </div>
+      </form>
+    </Modal>
   );
 };
+
+const Label = ({ children }) => (
+  <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+    {children}
+  </label>
+);
 
 export default UploadResource;

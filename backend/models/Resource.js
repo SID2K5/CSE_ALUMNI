@@ -34,11 +34,15 @@ const resourceSchema = new mongoose.Schema(
       max: 8,
     },
 
-    // resource category
+    // Resource category. The name `type` is preserved for backward
+    // compatibility with existing documents and the current /api/resources?type=
+    // filter. Extended from 3 → 5 options so the UI can expose the full
+    // set the brief requires.
     type: {
       type: String,
-      enum: ["notes", "pyq", "assignment"],
+      enum: ["notes", "pyq", "assignment", "study-material", "other"],
       default: "notes",
+      index: true,
     },
 
     // ownership
