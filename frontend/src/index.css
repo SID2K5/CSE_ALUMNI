@@ -10,13 +10,21 @@
 ===================================================== */
 
 :root {
-  --bg: #f4f6fb;
-  --surface: #ffffff;
-  --surface-2: #eef1f8;
-  --line: #e4e7ef;
-  --ink: #0f172a;
-  --muted: #5b6475;
+  /* Page / surface */
+  --bg: #B8FFFF;            /* page background — user spec */
+  --surface: #ffffff;        /* cards */
+  --surface-2: #eef1f8;      /* inset / secondary surface */
+  --line: #e4e7ef;           /* subtle border */
 
+  /* Topbar / navbar */
+  --nav-bg: #FF8A9D;         /* topbar background — user spec */
+  --nav-ink: #0F172A;        /* icons + text on topbar — user spec (black) */
+
+  /* Text */
+  --ink: #0f172a;            /* primary text */
+  --muted: #5b6475;          /* secondary / caption */
+
+  /* Brand accents */
   --brand: #7c3aed;
   --brand-2: #0891b2;
   --brand-soft: rgba(124, 58, 237, 0.12);
@@ -25,10 +33,16 @@
 }
 
 .dark {
-  --bg: #0a0f1c;
+  /* Dark theme — preserved from existing identity (slightly deeper surface). */
+  --bg: #0B1120;
   --surface: #111827;
   --surface-2: #192338;
   --line: #243049;
+
+  /* Pink nav is a light-mode signature; dark mode uses a sober slate bar. */
+  --nav-bg: #0F172A;
+  --nav-ink: #F8FAFC;
+
   --ink: #e6e9f2;
   --muted: #94a3b8;
 
@@ -211,14 +225,17 @@ button,
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  color: var(--ink);
+  color: inherit; /* inherit so icons match topbar (nav-ink) or body (ink) */
   cursor: pointer;
   border: none;
   background: transparent;
 }
 
 .icon-btn:hover {
-  background: var(--surface-2);
+  background: rgba(0, 0, 0, 0.08); /* works on both pink nav and light surfaces */
+}
+.dark .icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* Form field */

@@ -124,7 +124,7 @@ function App() {
         <Route
           path="/resources"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute block={["alumni"]}>
               <Layout>
                 <Resources />
               </Layout>
@@ -135,7 +135,7 @@ function App() {
         <Route
           path="/resources/:semester"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute block={["alumni"]}>
               <Layout>
                 <ResourcesBySemester />
               </Layout>
@@ -258,7 +258,7 @@ function App() {
         <Route
           path="/teacher-dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allow={["teacher"]}>
               <Layout>
                 <TeacherDashboard />
               </Layout>
@@ -332,7 +332,7 @@ function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allow={["admin"]}>
               <Layout>
                 <AdminDashboard />
               </Layout>
@@ -344,7 +344,7 @@ function App() {
         <Route
           path="/admin/events"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allow={["admin"]}>
               <Layout>
                 <AdminEvents />
               </Layout>
@@ -356,7 +356,7 @@ function App() {
         <Route
           path="/admin/jobs"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allow={["admin"]}>
               <Layout>
                 <AdminJobs />
               </Layout>
@@ -368,7 +368,7 @@ function App() {
         <Route
           path="/admin/users"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allow={["admin"]}>
               <Layout>
                 <UserApprovals />
               </Layout>

@@ -98,10 +98,10 @@ export const loginUser = async (req, res) => {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // ✅ Find User
+    // ✅ Find User (explicitly request password — it is select:false by default)
     const user = await User.findOne({
       email: normalizedEmail,
-    });
+    }).select("+password");
 
     if (!user) {
       return res.status(401).json({

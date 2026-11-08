@@ -115,8 +115,7 @@ const Topbar = () => {
       <header
         className="
           fixed top-0 left-0 w-full h-[72px] z-50
-          backdrop-blur-xl
-          bg-surface/80
+          bg-nav-bg text-nav-ink
           border-b border-line
           flex items-center justify-between gap-3
           px-4 md:px-6
@@ -129,7 +128,7 @@ const Topbar = () => {
           onClick={() => navigate("/feed")}
           className="
             font-display font-extrabold text-2xl shrink-0
-            gradient-text cursor-pointer tracking-tight select-none
+            text-nav-ink cursor-pointer tracking-tight select-none
           "
         >
           NEXUS
@@ -374,7 +373,11 @@ const Topbar = () => {
                     !n.isRead ? "bg-brand-soft" : ""
                   }`}
                 >
-                  <img src={avatarUrl(user, 40)} alt="" className="w-9 h-9 rounded-full object-cover" />
+                  <img
+                    src={avatarUrl(n.sender || { name: "System" }, 40)}
+                    alt={n.sender?.name || ""}
+                    className="w-9 h-9 rounded-full object-cover"
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-ink">{n.message}</p>
                     <span className="text-xs text-muted">

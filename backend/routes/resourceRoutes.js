@@ -12,8 +12,10 @@ import {
 import protect from "../middleware/authMiddleware.js";
 import upload from "../middleware/uploadMiddleware.js";
 
-// NEW
-import resourceAccess from "../middleware/resourceAccessMiddleware.js";
+// Role gates: resourceManage (admin+teacher), resourceRead (not alumni).
+import resourceAccess, {
+  resourceRead,
+} from "../middleware/resourceAccessMiddleware.js";
 
 const router = express.Router();
 
@@ -34,37 +36,42 @@ router.post(
 );
 
 /* =====================================================
-   📥 GET ALL RESOURCES
+   📥 GET ALL RESOURCES  (not for alumni)
 ===================================================== */
 router.get(
   "/",
   protect,
+  resourceRead,
   getResources
 );
 
 /* =====================================================
-   👨‍🏫 GET MY RESOURCES
+   👨‍🏫 GET MY RESOURCES  (admin/teacher only — uploaders)
 ===================================================== */
 router.get(
   "/my",
   protect,
+  resourceAccess, // upload rights required to have "my" resources
   getMyResources
 );
 
 /* =====================================================
-   👁️ VIEW RESOURCE
+   👁️ VIEW RESOURCE  (not for alumni)
 ===================================================== */
 router.put(
   "/view/:id",
   protect,
+  resourceRead,
   viewResource
 );
 
 /* =====================================================
-   ⬇️ DOWNLOAD RESOURCE
+   ⬇️ DOWNLOAD RESOURCE  (not for alumni)
 ===================================================== */
 router.get(
   "/download/:id",
+  protect,
+  resourceRead,
   downloadResource
 );
 

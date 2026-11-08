@@ -26,6 +26,8 @@ export default {
         line: "var(--line)",
         ink: "var(--ink)",
         muted: "var(--muted)",
+        "nav-bg": "var(--nav-bg)",
+        "nav-ink": "var(--nav-ink)",
         brand: {
           DEFAULT: "var(--brand)",
           2: "var(--brand-2)",
