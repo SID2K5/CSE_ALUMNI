@@ -38,22 +38,43 @@ export const createJob = async (req, res) => {
 ===================================================== */
 export const getJobs = async (req, res) => {
   try {
-    const { search, type } = req.query;
+    const {
+      search,
+      type,
+      location,
+      experienceLevel,
+      skill,
+    } = req.query;
 
-    let query = { status: "approved" };
+    const escapeRegExp = (s) =>
+      String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-    // 🔍 SEARCH
+    const query = { status: "approved" };
+
+    // 🔍 SEARCH across title / company / tags
     if (search) {
+      const safe = escapeRegExp(search);
       query.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { company: { $regex: search, $options: "i" } },
-        { location: { $regex: search, $options: "i" } },
+        { title: { $regex: safe, $options: "i" } },
+        { company: { $regex: safe, $options: "i" } },
+        { tags: { $regex: safe, $options: "i" } },
       ];
     }
 
-    // 📌 FILTER BY TYPE
-    if (type) {
-      query.type = type;
+    // 📌 TYPE
+    if (type) query.type = type;
+
+    // 📍 LOCATION
+    if (location) {
+      query.location = { $regex: escapeRegExp(location), $options: "i" };
+    }
+
+    // 🎯 EXPERIENCE
+    if (experienceLevel) query.experienceLevel = experienceLevel;
+
+    // 🛠️ SKILL (single tag)
+    if (skill) {
+      query.tags = { $regex: escapeRegExp(skill), $options: "i" };
     }
 
     const jobs = await Job.find(query)

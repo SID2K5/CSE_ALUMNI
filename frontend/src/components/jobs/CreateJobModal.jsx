@@ -1,168 +1,223 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
+import { Briefcase } from "lucide-react";
+
 import API from "../../services/api";
-import { X, Briefcase, Building2, MapPin, Link } from "lucide-react";
-import { motion } from "framer-motion";
+import { Button, Modal } from "../ui";
 
-const CreateJobModal = ({ close, refresh }) => {
-  const [form, setForm] = useState({
-    title: "",
-    company: "",
-    location: "",
-    applyLink: "",
-    description: "",
-    type: "Internship",
-  });
+/* =====================================================
+   CreateJobModal — Modal form.
+   Preserves POST /api/jobs JSON contract.
+===================================================== */
 
+const TYPES = ["Full-time", "Internship", "Part-time", "Contract"];
+const EXPERIENCE = ["Fresher", "Junior", "Mid", "Senior"];
+
+const emptyForm = {
+  title: "",
+  company: "",
+  location: "",
+  type: "Full-time",
+  experienceLevel: "Fresher",
+  salary: "",
+  applyLink: "",
+  description: "",
+  tags: "",
+};
+
+const CreateJobModal = ({ open, onClose, onCreated }) => {
+  const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
 
-  // 🔥 HANDLE INPUT
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const set = (k) => (e) =>
+    setForm((p) => ({ ...p, [k]: e.target.value }));
 
-  // 🔥 SUBMIT
+  const resetAll = () => setForm(emptyForm);
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault?.();
+    if (
+      !form.title.trim() ||
+      !form.company.trim() ||
+      !form.location.trim() ||
+      !form.applyLink.trim()
+    ) {
+      return toast.error("Title, company, location and apply link are required");
+    }
+    try {
+      new URL(form.applyLink);
+    } catch {
+      return toast.error("Apply link must be a valid URL");
+    }
+
+    const payload = {
+      ...form,
+      title: form.title.trim(),
+      company: form.company.trim(),
+      location: form.location.trim(),
+      applyLink: form.applyLink.trim(),
+      salary: form.salary.trim(),
+      tags: form.tags
+        ? form.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [],
+    };
+
     try {
       setLoading(true);
-      await API.post("/jobs", form);
-
-      refresh(); // refresh job list
-      close();   // close modal
+      await API.post("/jobs", payload);
+      resetAll();
+      onCreated?.();
     } catch (err) {
-      console.error("❌ Job Post Error:", err.response?.data || err.message);
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Could not post job");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleClose = () => {
+    if (loading) return;
+    resetAll();
+    onClose?.();
+  };
+
   return (
-    <div
-      className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50"
-      onClick={close} // 🔥 CLICK OUTSIDE CLOSE
-    >
-      {/* 🔥 STOP PROPAGATION */}
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg bg-[#020617] border border-gray-800 rounded-2xl p-6 relative shadow-xl"
-      >
-        {/* ❌ CLOSE BUTTON */}
-        <button
-          onClick={close}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition"
-        >
-          <X size={22} />
-        </button>
-
-        {/* HEADER */}
-        <h2 className="text-2xl font-bold gradient-text mb-6 flex items-center gap-2">
-          Post a Job 💼
-        </h2>
-
-        {/* FORM */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-
-          {/* TITLE */}
-          <div className="flex items-center gap-2 bg-[#0f172a] p-3 rounded-lg">
-            <Briefcase size={18} />
-            <input
-              name="title"
-              placeholder="Job Title"
-              value={form.title}
-              onChange={handleChange}
-              required
-              className="bg-transparent outline-none w-full"
-            />
-          </div>
-
-          {/* COMPANY */}
-          <div className="flex items-center gap-2 bg-[#0f172a] p-3 rounded-lg">
-            <Building2 size={18} />
-            <input
-              name="company"
-              placeholder="Company"
-              value={form.company}
-              onChange={handleChange}
-              required
-              className="bg-transparent outline-none w-full"
-            />
-          </div>
-
-          {/* LOCATION */}
-          <div className="flex items-center gap-2 bg-[#0f172a] p-3 rounded-lg">
-            <MapPin size={18} />
-            <input
-              name="location"
-              placeholder="Location"
-              value={form.location}
-              onChange={handleChange}
-              required
-              className="bg-transparent outline-none w-full"
-            />
-          </div>
-
-          {/* APPLY LINK */}
-          <div className="flex items-center gap-2 bg-[#0f172a] p-3 rounded-lg">
-            <Link size={18} />
-            <input
-              name="applyLink"
-              placeholder="Apply Link"
-              value={form.applyLink}
-              onChange={handleChange}
-              required
-              className="bg-transparent outline-none w-full"
-            />
-          </div>
-
-          {/* DESCRIPTION */}
-          <textarea
-            name="description"
-            placeholder="Job Description..."
-            value={form.description}
-            onChange={handleChange}
-            rows={4}
-            className="w-full bg-[#0f172a] p-3 rounded-lg outline-none"
-          />
-
-          {/* TYPE */}
-          <select
-            name="type"
-            value={form.type}
-            onChange={handleChange}
-            className="w-full bg-[#0f172a] p-3 rounded-lg outline-none"
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="Post a job"
+      size="lg"
+      footer={
+        <div className="flex gap-2 justify-end">
+          <Button variant="ghost" onClick={handleClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            loading={loading}
+            iconLeft={Briefcase}
           >
-            <option>Internship</option>
-            <option>Full-time</option>
-          </select>
+            Submit for review
+          </Button>
+        </div>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <p className="text-xs text-muted">
+          New jobs go to the admin review queue before they appear publicly.
+        </p>
 
-          {/* ACTIONS */}
-          <div className="flex gap-3 pt-2">
+        <div>
+          <Label>Role title *</Label>
+          <input
+            className="input"
+            value={form.title}
+            onChange={set("title")}
+            placeholder="e.g. Software Engineer — Platform"
+          />
+        </div>
 
-            {/* SUBMIT */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-cyan-400 text-white font-semibold hover:scale-105 transition"
-            >
-              {loading ? "Posting..." : "Submit"}
-            </button>
-
-            {/* CANCEL */}
-            <button
-              type="button"
-              onClick={close} // 🔥 FIXED
-              className="flex-1 py-2 rounded-lg border border-red-500 text-red-400 hover:bg-red-500/10 transition"
-            >
-              Cancel
-            </button>
-
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <Label>Company *</Label>
+            <input
+              className="input"
+              value={form.company}
+              onChange={set("company")}
+              placeholder="e.g. Google"
+            />
           </div>
-        </form>
-      </motion.div>
-    </div>
+          <div>
+            <Label>Location *</Label>
+            <input
+              className="input"
+              value={form.location}
+              onChange={set("location")}
+              placeholder="e.g. Bangalore (Hybrid)"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <Label>Type</Label>
+            <select className="input" value={form.type} onChange={set("type")}>
+              {TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label>Experience</Label>
+            <select
+              className="input"
+              value={form.experienceLevel}
+              onChange={set("experienceLevel")}
+            >
+              {EXPERIENCE.map((e) => (
+                <option key={e} value={e}>
+                  {e}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label>Salary (optional)</Label>
+            <input
+              className="input"
+              value={form.salary}
+              onChange={set("salary")}
+              placeholder="e.g. 12 LPA"
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label>Apply link *</Label>
+          <input
+            className="input"
+            type="url"
+            value={form.applyLink}
+            onChange={set("applyLink")}
+            placeholder="https://company.com/careers/role"
+          />
+        </div>
+
+        <div>
+          <Label>Description</Label>
+          <textarea
+            className="input"
+            rows={4}
+            value={form.description}
+            onChange={set("description")}
+            placeholder="What the role involves, team context, must-haves…"
+          />
+        </div>
+
+        <div>
+          <Label>Skills / tags</Label>
+          <input
+            className="input"
+            value={form.tags}
+            onChange={set("tags")}
+            placeholder="Comma-separated, e.g. react, node, aws"
+          />
+        </div>
+      </form>
+    </Modal>
   );
 };
+
+const Label = ({ children }) => (
+  <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+    {children}
+  </label>
+);
 
 export default CreateJobModal;

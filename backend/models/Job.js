@@ -21,10 +21,13 @@ const jobSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // Job type. Extended from 2 → 4 options so the UI can filter the
+    // full set the brief requires. Existing docs keep their current value.
     type: {
       type: String,
-      enum: ["Internship", "Full-time"],
+      enum: ["Full-time", "Internship", "Part-time", "Contract"],
       default: "Internship",
+      index: true,
     },
 
     description: {
