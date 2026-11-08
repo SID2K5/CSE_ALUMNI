@@ -1,0 +1,326 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ================= GLOBAL ================= */
+
+* {
+  box-sizing: border-box;
+
+  transition:
+    background-color 0.3s,
+    color 0.3s,
+    border 0.3s,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent browser inconsistencies */
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+
+  overflow-x: hidden;
+}
+
+/* Better image rendering */
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Better font rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ================= LIGHT MODE ================= */
+
+body {
+  background-color: #B8FFFF;
+  color: black;
+}
+
+/* Premium Card - LIGHT MODE */
+.glass {
+  background: rgba(255, 255, 255, 0.92);
+
+  border: 1px solid rgba(31, 41, 55, 0.15);
+
+  border-radius: 24px;
+
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.08),
+    0 2px 10px rgba(0, 0, 0, 0.04);
+
+  overflow: hidden;
+}
+
+/* ================= DARK MODE ================= */
+
+.dark body {
+  background-color: #0B1120;
+  color: white;
+}
+
+/* Force readable white text in dark mode */
+.dark,
+.dark p,
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark span,
+.dark div,
+.dark label,
+.dark button {
+  color: white !important;
+}
+
+/* Premium Card - DARK MODE */
+.dark .glass {
+  background: rgba(15, 23, 42, 0.72);
+
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  box-shadow:
+    0 10px 35px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* ================= COMMON UI ================= */
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(
+    90deg,
+    #7C3AED,
+    #06B6D4
+  );
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Primary Button */
+.btn-primary {
+  padding: 10px 18px;
+
+  border-radius: 14px;
+
+  background: linear-gradient(
+    to right,
+    #7C3AED,
+    #06B6D4
+  );
+
+  color: white !important;
+
+  font-weight: 600;
+
+  border: none;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.03);
+
+  box-shadow:
+    0 8px 24px rgba(124, 58, 237, 0.35);
+}
+
+/* Premium Hover Effect */
+.glass:hover {
+  transform: translateY(-4px);
+
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* ================= INPUTS ================= */
+
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+/* Chrome autofill fix */
+input:-webkit-autofill {
+  -webkit-box-shadow:
+    0 0 0 1000px transparent inset !important;
+
+  -webkit-text-fill-color:
+    inherit !important;
+
+  transition:
+    background-color 9999s ease-in-out 0s;
+}
+
+/* ================= SCROLLBAR ================= */
+
+/* Default scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    to bottom,
+    #7C3AED,
+    #06B6D4
+  );
+
+  border-radius: 20px;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #7C3AED transparent;
+}
+
+/* ================= HIDDEN SCROLLBAR ================= */
+
+/* Utility for premium hidden scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ================= PREMIUM SIDEBAR SCROLL ================= */
+
+/* Smooth touch scrolling */
+.sidebar-scroll {
+  overflow-y: auto;
+
+  -webkit-overflow-scrolling: touch;
+
+  overscroll-behavior: contain;
+}
+
+/* ================= SWIPER / MEDIA CAROUSEL ================= */
+
+.swiper {
+  width: 100%;
+  height: 100%;
+}
+
+/* Navigation Buttons */
+.swiper-button-next,
+.swiper-button-prev {
+  color: white !important;
+
+  width: 42px !important;
+  height: 42px !important;
+
+  background: rgba(0, 0, 0, 0.45);
+
+  backdrop-filter: blur(10px);
+
+  border-radius: 999px;
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease;
+}
+
+.swiper-button-next:hover,
+.swiper-button-prev:hover {
+  transform: scale(1.08);
+
+  background: rgba(124, 58, 237, 0.85);
+}
+
+/* Arrow Icon Size */
+.swiper-button-next::after,
+.swiper-button-prev::after {
+  font-size: 16px !important;
+
+  font-weight: bold;
+}
+
+/* Pagination */
+.swiper-pagination {
+  bottom: 12px !important;
+}
+
+/* Pagination Bullet */
+.swiper-pagination-bullet {
+  background: rgba(255, 255, 255, 0.7) !important;
+
+  width: 8px;
+  height: 8px;
+
+  opacity: 1 !important;
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease;
+}
+
+/* Active Bullet */
+.swiper-pagination-bullet-active {
+  background: #a855f7 !important;
+
+  transform: scale(1.3);
+}
+
+/* Media animation */
+.swiper-slide img,
+.swiper-slide video {
+  transition:
+    transform 0.4s ease;
+}
+
+.swiper-slide img:hover,
+.swiper-slide video:hover {
+  transform: scale(1.01);
+}
+
+/* ================= PREMIUM MEDIA SHADOW ================= */
+
+.media-shadow {
+  box-shadow:
+    0 15px 35px rgba(0, 0, 0, 0.25);
+}
+
+/* ================= GLASS OVERLAY ================= */
+
+.glass-overlay {
+  background: rgba(255, 255, 255, 0.08);
+
+  backdrop-filter: blur(12px);
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
