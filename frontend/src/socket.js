@@ -7,9 +7,14 @@ import { io } from "socket.io-client";
 // ✅ LOCALHOST (DEV)
 // ✅ AUTO SUPPORTS VERCEL ENV LATER
 
-const SOCKET_URL =
+// VITE_API_URL includes the "/api" suffix (used by services/api.js).
+// Socket.IO connects to the server ROOT, so strip a trailing "/api".
+const API_URL =
   import.meta.env.VITE_API_URL ||
-  "http://localhost:5000";
+  "http://localhost:5000/api";
+
+const SOCKET_URL =
+  API_URL.replace(/\/api\/?$/, "");
 
 /* =====================================================
    🔌 SOCKET INSTANCE
