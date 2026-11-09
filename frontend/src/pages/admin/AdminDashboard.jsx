@@ -176,7 +176,7 @@ const AdminDashboard = () => {
               <Icon size={15} />
               <span className="hidden sm:inline">{t.label}</span>
               {badge > 0 && (
-                <span className="min-w-[17px] h-[17px] px-1 rounded-full bg-brand text-white text-[10px] font-bold flex items-center justify-center">
+                <span className="min-w-[17px] h-[17px] px-1 rounded-full bg-brand text-brand-ink text-[10px] font-bold flex items-center justify-center">
                   {badge > 9 ? "9+" : badge}
                 </span>
               )}

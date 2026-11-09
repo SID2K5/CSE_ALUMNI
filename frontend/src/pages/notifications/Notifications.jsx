@@ -203,13 +203,13 @@ const Notifications = () => {
               onClick={() => setFilter(f.key)}
               className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold transition-colors ${
                 active
-                  ? "bg-brand text-white"
+                  ? "bg-brand text-brand-ink"
                   : "bg-surface-2 text-ink border border-line hover:bg-surface"
               }`}
             >
               {f.label}
               {count > 0 && (
-                <span className={active ? "text-white/80" : "text-muted"}>
+                <span className={active ? "text-brand-ink/80" : "text-muted"}>
                   · {count}
                 </span>
               )}

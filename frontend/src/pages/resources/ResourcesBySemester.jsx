@@ -243,7 +243,7 @@ const ResourcesBySemester = () => {
                 onClick={() => setCategory(c.key)}
                 className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold transition-colors ${
                   active
-                    ? "bg-brand text-white"
+                    ? "bg-brand text-brand-ink"
                     : "bg-surface-2 text-ink hover:bg-surface border border-line"
                 }`}
               >
@@ -251,7 +251,7 @@ const ResourcesBySemester = () => {
                 {count > 0 && (
                   <span
                     className={`text-[10px] ${
-                      active ? "text-white/80" : "text-muted"
+                      active ? "text-brand-ink/80" : "text-muted"
                     }`}
                   >
                     · {count}

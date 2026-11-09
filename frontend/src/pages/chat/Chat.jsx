@@ -406,7 +406,7 @@ const Chat = () => {
                               {c.lastMessage || "No messages yet"}
                             </span>
                             {c.unread > 0 && (
-                              <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-brand text-white text-[10px] font-bold flex items-center justify-center">
+                              <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-brand text-brand-ink text-[10px] font-bold flex items-center justify-center">
                                 {c.unread > 9 ? "9+" : c.unread}
                               </span>
                             )}
@@ -557,7 +557,7 @@ const Chat = () => {
                   <button
                     type="submit"
                     disabled={(!text.trim() && !file) || sending}
-                    className="icon-btn !w-10 !h-10 bg-brand text-white hover:bg-brand disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                    className="icon-btn !w-10 !h-10 bg-brand text-brand-ink hover:bg-brand disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                     aria-label="Send"
                   >
                     <Send size={17} />
@@ -595,14 +595,14 @@ const MessageBubble = ({ m, mine, onDelete }) => {
         <div
           className={`rounded-2xl px-3.5 py-2 ${
             mine
-              ? "bg-brand text-white rounded-br-md"
+              ? "bg-brand text-brand-ink rounded-br-md"
               : "bg-surface border border-line text-ink rounded-bl-md"
           }`}
         >
           {deleted ? (
             <p
               className={`text-sm italic ${
-                mine ? "text-white/70" : "text-muted"
+                mine ? "text-brand-ink/70" : "text-muted"
               }`}
             >
               This message was deleted
@@ -649,7 +649,7 @@ const MessageBubble = ({ m, mine, onDelete }) => {
 
               <div
                 className={`flex items-center gap-1.5 mt-1 text-[10px] ${
-                  mine ? "text-white/70" : "text-muted"
+                  mine ? "text-brand-ink/70" : "text-muted"
                 }`}
               >
                 {m.createdAt && dayjs(m.createdAt).format("h:mm A")}

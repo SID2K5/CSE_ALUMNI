@@ -133,7 +133,7 @@ const Resources = () => {
                 onClick={() => setCategory(c.key)}
                 className={`inline-flex items-center h-8 px-3 rounded-full text-xs font-semibold transition-colors ${
                   active
-                    ? "bg-brand text-white"
+                    ? "bg-brand text-brand-ink"
                     : "bg-surface-2 text-ink hover:bg-surface border border-line"
                 }`}
               >

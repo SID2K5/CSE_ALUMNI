@@ -155,7 +155,7 @@ const Teachers = () => {
               onClick={() => setDepartment("")}
               className={`h-8 px-3 rounded-full text-xs font-semibold transition-colors ${
                 !department
-                  ? "bg-brand text-white"
+                  ? "bg-brand text-brand-ink"
                   : "bg-surface-2 text-ink border border-line hover:bg-surface"
               }`}
             >
@@ -167,7 +167,7 @@ const Teachers = () => {
                 onClick={() => setDepartment(d)}
                 className={`h-8 px-3 rounded-full text-xs font-semibold transition-colors ${
                   department === d
-                    ? "bg-brand text-white"
+                    ? "bg-brand text-brand-ink"
                     : "bg-surface-2 text-ink border border-line hover:bg-surface"
                 }`}
               >

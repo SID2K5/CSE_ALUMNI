@@ -190,7 +190,7 @@ const Jobs = () => {
             onClick={() => setSavedOnly((s) => !s)}
             className={`inline-flex items-center gap-2 h-10 px-3.5 rounded-xl border text-sm font-semibold transition-colors ${
               savedOnly
-                ? "bg-brand text-white border-transparent"
+                ? "bg-brand text-brand-ink border-transparent"
                 : "bg-surface-2 border-line text-ink hover:bg-surface"
             }`}
           >

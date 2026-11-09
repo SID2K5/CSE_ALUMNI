@@ -32,6 +32,7 @@ export default {
           DEFAULT: "var(--brand)",
           2: "var(--brand-2)",
           soft: "var(--brand-soft)",
+          ink: "var(--brand-ink)",
         },
         // Kept for backwards compatibility with existing utilities.
         primary: "#7C3AED",
