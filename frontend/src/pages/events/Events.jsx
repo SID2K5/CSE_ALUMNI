@@ -77,7 +77,6 @@ const Events = () => {
 
     const bucket = events.filter((e) => {
       const end = e.endDate ? new Date(e.endDate).getTime() : 0;
-      const start = e.startDate ? new Date(e.startDate).getTime() : 0;
 
       if (tab === "upcoming") return end >= now;
       if (tab === "past") return end < now;

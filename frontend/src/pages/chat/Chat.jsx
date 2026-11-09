@@ -98,7 +98,6 @@ const Chat = () => {
     } finally {
       setThreadLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?._id]);
 
   useEffect(() => {

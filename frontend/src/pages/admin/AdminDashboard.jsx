@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import dayjs from "dayjs";
 import {
@@ -69,7 +68,6 @@ const TABS = [
 const ROLES = ["student", "alumni", "teacher"];
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
 
   const [tab, setTab] = useState("overview");
   const [stats, setStats] = useState(null);
@@ -193,7 +191,7 @@ const AdminDashboard = () => {
       {tab === "events" && <EventsPanel onChanged={fetchStats} />}
       {tab === "jobs" && <JobsPanel onChanged={fetchStats} />}
       {tab === "reports" && (
-        <ReportsPanel onChanged={fetchStats} navigate={navigate} />
+        <ReportsPanel onChanged={fetchStats} />
       )}
     </div>
   );
@@ -774,7 +772,7 @@ export const JobsPanel = ({ onChanged }) => {
 };
 
 /* ==================== REPORTS ==================== */
-export const ReportsPanel = ({ onChanged, navigate }) => {
+export const ReportsPanel = ({ onChanged }) => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);

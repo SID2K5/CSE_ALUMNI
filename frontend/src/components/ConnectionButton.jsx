@@ -191,7 +191,7 @@ const ConnectionButton = ({ userId }) => {
           <button
             onClick={handleConnect}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-cyan-400 text-white hover:scale-105 transition"
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-brand text-white hover:opacity-90 transition-opacity"
           >
             <UserPlus size={16} />
             {loading ? "Connecting..." : "Connect"}
