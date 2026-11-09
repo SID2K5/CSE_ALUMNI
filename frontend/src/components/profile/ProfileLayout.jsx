@@ -32,7 +32,7 @@ export const ProfileHeader = ({ user, actions }) => {
   return (
     <div className="card overflow-hidden mb-5">
       {/* COVER */}
-      <div className="h-32 sm:h-44 bg-surface-2 relative">
+      <div className="h-32 sm:h-44 bg-surface-2 overflow-hidden">
         {user.coverPic ? (
           <img
             src={user.coverPic}
@@ -44,8 +44,8 @@ export const ProfileHeader = ({ user, actions }) => {
         )}
       </div>
 
-      {/* IDENTITY */}
-      <div className="px-5 sm:px-7 pb-6">
+      {/* IDENTITY — z-10 so the avatar paints above the cover image */}
+      <div className="px-5 sm:px-7 pb-6 relative z-10">
         <div className="flex items-end justify-between gap-4 flex-wrap -mt-10 sm:-mt-12">
           <div className="flex items-end gap-4 min-w-0">
             <div className="ring-4 ring-surface rounded-full">
