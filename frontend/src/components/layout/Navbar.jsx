@@ -1,201 +1,99 @@
-import {
-  User,
-  BookOpen,
-  MessageCircle,
-  Users,
-  Shield,
-  CalendarDays,
-  Briefcase,
-  GraduationCap,
-  LayoutDashboard,
-  UserPlus,
-} from "lucide-react";
-
 import { Link, useLocation } from "react-router-dom";
+import { getNavItems, isActivePath } from "./navItems";
+
+/* =====================================================
+   SIDEBAR
+   Fixed, full-height, and intentionally DARK IN BOTH
+   THEMES (sidebar-* tokens never flip). Desktop only —
+   mobile uses MobileNav.
+===================================================== */
 
 const Navbar = () => {
   const location = useLocation();
 
-  const user = JSON.parse(localStorage.getItem("user"));
-  const role = user?.role;
+  const user = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user"));
+    } catch {
+      return null;
+    }
+  })();
 
-  let items = [];
-
-  /* ================= NAV ITEMS ================= */
-
-  // 👤 PROFILE
-  items.push({
-    name: "Profile",
-    icon: <User />,
-    path: "/profile",
-    color: "from-purple-500 to-indigo-500",
-    shadow: "shadow-purple-300/40",
-  });
-
-  // 📚 RESOURCES
-  if (
-    role === "student" ||
-    role === "teacher" ||
-    role === "admin"
-  ) {
-    items.push({
-      name: "Resources",
-      icon: <BookOpen />,
-      path: "/resources",
-      color: "from-cyan-400 to-blue-500",
-      shadow: "shadow-cyan-300/40",
-    });
-  }
-
-  // 👨‍🏫 TEACHER DASHBOARD
-  if (role === "teacher") {
-    items.push({
-      name: "Dashboard",
-      icon: <LayoutDashboard />,
-      path: "/teacher-dashboard",
-      color: "from-fuchsia-500 to-violet-600",
-      shadow: "shadow-fuchsia-300/40",
-    });
-  }
-
-  // 📅 EVENTS
-  items.push({
-    name: "Events",
-    icon: <CalendarDays />,
-    path: "/events",
-    color: "from-orange-400 to-pink-500",
-    shadow: "shadow-orange-300/40",
-  });
-
-  // 💼 JOBS
-  items.push({
-    name: "Jobs",
-    icon: <Briefcase />,
-    path: "/jobs",
-    color: "from-indigo-500 to-purple-600",
-    shadow: "shadow-indigo-300/40",
-  });
-
-  // 🎓 ALUMNI
-  items.push({
-    name: "Alumni",
-    icon: <Users />,
-    path: "/alumni",
-    color: "from-emerald-400 to-green-500",
-    shadow: "shadow-green-300/40",
-  });
-
-  // 🤝 CONNECTIONS
-  items.push({
-    name: "Connections",
-    icon: <UserPlus />,
-    path: "/connections",
-    color: "from-sky-400 to-cyan-500",
-    shadow: "shadow-sky-300/40",
-  });
-
-  // 👨‍🏫 TEACHERS
-  if (
-    role === "student" ||
-    role === "alumni" ||
-    role === "teacher" ||
-    role === "admin"
-  ) {
-    items.push({
-      name: "Teachers",
-      icon: <GraduationCap />,
-      path: "/teachers",
-      color: "from-yellow-400 to-amber-500",
-      shadow: "shadow-yellow-300/40",
-    });
-  }
-
-  // 💬 CHAT
-  items.push({
-    name: "Chat",
-    icon: <MessageCircle />,
-    path: "/chat",
-    color: "from-pink-400 to-rose-500",
-    shadow: "shadow-pink-300/40",
-  });
-
-  // 🛡️ ADMIN PANEL
-  if (role === "admin") {
-    items.push({
-      name: "Admin",
-      icon: <Shield />,
-      path: "/admin",
-      color: "from-red-400 to-orange-500",
-      shadow: "shadow-red-300/40",
-    });
-  }
+  const items = getNavItems(user?.role);
 
   return (
-    <div
+    <aside
       className="
-        fixed left-4 top-24 hidden md:flex flex-col gap-5 z-40
-
-        h-[calc(100vh-7rem)]
-        overflow-y-auto
-        pr-2
-
-        scrollbar-hide
+        hidden md:flex flex-col
+        fixed inset-y-0 left-0 z-50
+        w-[260px]
+        bg-sidebar-bg border-r border-sidebar-border
       "
     >
+      {/* BRAND */}
+      <div className="h-[72px] flex items-center gap-2.5 px-5 shrink-0">
+        <span className="w-8 h-8 rounded-lg bg-gradient-lavender flex items-center justify-center shrink-0">
+          <span className="font-display font-extrabold text-[15px] text-[#101A2B]">
+            N
+          </span>
+        </span>
+        <span className="font-display font-extrabold text-[19px] tracking-tight text-sidebar-text">
+          NEXUS
+        </span>
+      </div>
 
-      {items.map((item, i) => {
-        const active =
-          location.pathname === item.path ||
-          location.pathname.startsWith(item.path + "/");
+      {/* NAV */}
+      <nav className="flex-1 overflow-y-auto scrollbar-hide px-3 py-2 space-y-0.5">
+        {items.map((item) => {
+          const Icon = item.icon;
+          const active = isActivePath(location.pathname, item.path);
 
-        return (
-          <Link key={i} to={item.path}>
-            <div
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              aria-current={active ? "page" : undefined}
               className={`
-                relative flex items-center gap-3 px-6 py-4 rounded-2xl cursor-pointer
-                transition-all duration-300 overflow-hidden
-
-                bg-gradient-to-br ${item.color} text-white
-                shadow-lg ${item.shadow}
-
+                nav-item group relative flex items-center gap-3
+                px-3 py-2.5 rounded-md text-[14.5px] font-medium
+                outline-none
+                focus-visible:ring-2 focus-visible:ring-sidebar-icon-active
                 ${
                   active
-                    ? "scale-105 ring-2 ring-white/40"
-                    : ""
+                    ? "bg-sidebar-active text-sidebar-text font-semibold"
+                    : "text-sidebar-text-secondary hover:bg-sidebar-hover hover:text-sidebar-text"
                 }
-
-                hover:scale-110 hover:shadow-2xl
               `}
             >
-
-              {/* GLOW EFFECT */}
-              <div className="absolute inset-0 opacity-20 bg-white blur-2xl" />
-
-              {/* 3D EFFECT */}
-              <div
-                className="absolute inset-0 rounded-2xl pointer-events-none"
-                style={{
-                  boxShadow:
-                    "inset 0 2px 6px rgba(255,255,255,0.3), inset 0 -3px 8px rgba(0,0,0,0.3)",
-                }}
+              {/* active rail */}
+              <span
+                className={`absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-sidebar-icon-active transition-opacity ${
+                  active ? "opacity-100" : "opacity-0"
+                }`}
               />
 
-              {/* ICON */}
-              <div className="z-10">
-                {item.icon}
-              </div>
+              <Icon
+                size={19}
+                className={
+                  active
+                    ? "text-sidebar-icon-active"
+                    : "text-sidebar-icon group-hover:text-sidebar-text"
+                }
+              />
 
-              {/* TEXT */}
-              <span className="z-10 font-semibold tracking-wide text-sm md:text-base">
-                {item.name}
-              </span>
+              <span className="truncate">{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
-            </div>
-          </Link>
-        );
-      })}
-
-    </div>
+      {/* FOOTER */}
+      <div className="shrink-0 px-5 py-4 border-t border-sidebar-border">
+        <p className="text-[11px] text-sidebar-text-secondary/70 leading-relaxed">
+          CSE Student &amp; Alumni Network
+        </p>
+      </div>
+    </aside>
   );
 };
 

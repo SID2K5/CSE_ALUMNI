@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      select: false, // never returned by default; use .select("+password") to read
     },
 
     /* =====================================================

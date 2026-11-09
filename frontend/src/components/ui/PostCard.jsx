@@ -42,6 +42,8 @@ import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
 
+import { avatarUrl } from "../../utils/avatar";
+
 dayjs.extend(relativeTime);
 
 const PostCard = ({
@@ -241,19 +243,7 @@ const PostCard = ({
         opacity: 1,
         y: 0,
       }}
-      className="
-        glass
-        rounded-3xl
-        p-5 md:p-6
-        border
-        border-gray-200
-        dark:border-gray-800
-        shadow-sm
-        hover:shadow-xl
-        transition-all
-        duration-300
-        space-y-5
-      "
+      className="card p-4 sm:p-5 space-y-4 hover:shadow-card-hover"
     >
 
       {/* ===================================================== */}
@@ -273,17 +263,10 @@ const PostCard = ({
         ">
 
           <img
-            src={
-              post.user
-                .profilePic ||
-              "https://via.placeholder.com/40"
-            }
-            className="
-              w-12 h-12
-              rounded-full
-              object-cover
-              border
-            "
+            src={avatarUrl(post.user, 96)}
+            alt=""
+            onClick={() => navigate(`/profile/${post.user._id}`)}
+            className="w-11 h-11 rounded-full object-cover ring-1 ring-line cursor-pointer"
           />
 
           <div>
@@ -374,21 +357,7 @@ const PostCard = ({
                 exit={{
                   opacity: 0,
                 }}
-                className="
-                  absolute
-                  right-0
-                  mt-2
-                  w-44
-                  rounded-2xl
-                  bg-white
-                  dark:bg-[#0f172a]
-                  border
-                  border-gray-200
-                  dark:border-gray-700
-                  shadow-2xl
-                  z-50
-                  overflow-hidden
-                "
+                className="absolute right-0 mt-2 w-44 card rounded-2xl z-50 overflow-hidden"
               >
 
                 {/* DELETE */}
@@ -902,12 +871,7 @@ const PostCard = ({
 
                 <div
                   key={i}
-                  className="
-                    bg-gray-100
-                    dark:bg-[#0f172a]
-                    px-4 py-3
-                    rounded-2xl
-                  "
+                  className="bg-surface-2 px-4 py-3 rounded-2xl"
                 >
 
                   <div className="
@@ -918,11 +882,8 @@ const PostCard = ({
                   ">
 
                     <img
-                      src={
-                        c.user
-                          ?.profilePic ||
-                        "https://via.placeholder.com/30"
-                      }
+                      src={avatarUrl(c.user, 64)}
+                      alt=""
                       className="
                         w-8 h-8
                         rounded-full
@@ -985,35 +946,11 @@ const PostCard = ({
                     e.target.value
                   )
                 }
-                placeholder="Write a comment..."
-                className="
-                  flex-1
-                  px-4 py-3
-                  rounded-2xl
-                  bg-gray-100
-                  dark:bg-[#0f172a]
-                  text-black
-                  dark:text-white
-                  focus:outline-none
-                "
+                placeholder="Write a comment…"
+                className="input flex-1 rounded-2xl"
               />
 
-              <button
-                onClick={
-                  handleComment
-                }
-                className="
-                  px-5 py-3
-                  rounded-2xl
-                  bg-gradient-to-r
-                  from-purple-500
-                  to-cyan-400
-                  text-white
-                  font-medium
-                  hover:scale-105
-                  transition
-                "
-              >
+              <button onClick={handleComment} className="btn-primary shrink-0">
                 Post
               </button>
 

@@ -1,741 +1,298 @@
-import { useEffect, useState } from "react";
-import API from "../../services/api";
-
+import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import dayjs from "dayjs";
 import {
   Upload,
-  Trash2,
   FileText,
-  FolderOpen,
-  BookOpen,
+  Download,
   Eye,
+  Trash2,
+  BookOpen,
   Search,
-  Plus,
+  LayoutDashboard,
 } from "lucide-react";
 
-import { motion } from "framer-motion";
-import toast from "react-hot-toast";
+import API from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+import { useDebounce } from "../../hooks/useDebounce";
 
-import PDFViewer from "../../components/resources/PDFViewer";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  Skeleton,
+} from "../../components/ui";
+import UploadResource from "../../components/resources/UploadResource";
+
+/* =====================================================
+   TEACHER DASHBOARD — /teacher-dashboard
+   Teacher's own uploads + usage stats. Route is already
+   gated to role "teacher" in App.jsx.
+===================================================== */
+
+const CAT_LABEL = {
+  notes: "Notes",
+  pyq: "PYQ",
+  assignment: "Assignment",
+  "study-material": "Study Material",
+  other: "Other",
+};
+
+const CAT_VARIANT = {
+  notes: "info",
+  pyq: "warning",
+  assignment: "accent",
+  "study-material": "success",
+  other: "neutral",
+};
 
 const TeacherDashboard = () => {
+  const { user } = useAuth();
+
   const [resources, setResources] = useState([]);
-  const [previewFile, setPreviewFile] = useState(null);
-
-  const [activeTab, setActiveTab] = useState("upload");
-
+  const [loading, setLoading] = useState(true);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 250);
 
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    semester: "",
-    type: "notes",
-    subject: "",
-    tags: "",
-    file: null,
-  });
-
-  /* ================= FETCH RESOURCES ================= */
-
-  const fetchResources = async () => {
+  const fetchMine = async () => {
+    setLoading(true);
     try {
       const { data } = await API.get("/resources/my");
-
-      setResources(data);
-
-    } catch (error) {
-      console.log(error);
+      setResources(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not load your uploads");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchResources();
+    fetchMine();
   }, []);
 
-  /* ================= FILTERED RESOURCES ================= */
-
-  const filteredResources = resources.filter((r) => {
-    const text = `
-      ${r.title}
-      ${r.description}
-      ${r.subject || ""}
-      ${(r.tags || []).join(" ")}
-    `.toLowerCase();
-
-    return text.includes(search.toLowerCase());
-  });
-
-  /* ================= UPLOAD RESOURCE ================= */
-
-  const uploadResource = async () => {
+  const handleDelete = async (r) => {
+    if (!confirm(`Delete "${r.title}"? This cannot be undone.`)) return;
     try {
-      if (
-        !form.title ||
-        !form.semester ||
-        !form.subject ||
-        !form.file
-      ) {
-        return toast.error("Please fill all required fields");
-      }
-
-      const formData = new FormData();
-
-      formData.append("title", form.title);
-      formData.append("description", form.description);
-      formData.append("semester", form.semester);
-      formData.append("type", form.type);
-
-      formData.append("subject", form.subject);
-      formData.append("tags", form.tags);
-
-      formData.append("file", form.file);
-
-      await API.post("/resources", formData);
-
-      toast.success("Resource uploaded successfully 🚀");
-
-      fetchResources();
-
-      setForm({
-        title: "",
-        description: "",
-        semester: "",
-        type: "notes",
-        subject: "",
-        tags: "",
-        file: null,
-      });
-
-      setActiveTab("resources");
-
-    } catch (error) {
-      console.log(error);
-      toast.error("Upload failed");
-    }
-  };
-
-  /* ================= DELETE ================= */
-
-  const deleteResource = async (id) => {
-    try {
-      await API.delete(`/resources/${id}`);
-
+      await API.delete(`/resources/${r._id}`);
+      setResources((prev) => prev.filter((x) => x._id !== r._id));
       toast.success("Resource deleted");
-
-      fetchResources();
-
-    } catch (error) {
-      console.log(error);
-      toast.error("Delete failed");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Delete failed");
     }
   };
+
+  /* ---------- derived stats (all from real data) ---------- */
+  const stats = useMemo(() => {
+    const downloads = resources.reduce(
+      (n, r) => n + (Number(r.downloads) || 0),
+      0
+    );
+    const views = resources.reduce((n, r) => n + (Number(r.views) || 0), 0);
+    const semesters = new Set(resources.map((r) => r.semester).filter(Boolean));
+    return {
+      total: resources.length,
+      downloads,
+      views,
+      semesters: semesters.size,
+    };
+  }, [resources]);
+
+  const filtered = useMemo(() => {
+    const q = debouncedSearch.trim().toLowerCase();
+    if (!q) return resources;
+    return resources.filter((r) =>
+      [r.title, r.subject, r.description, ...(r.tags || [])]
+        .filter(Boolean)
+        .some((f) => String(f).toLowerCase().includes(q))
+    );
+  }, [resources, debouncedSearch]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 px-3 md:px-0">
-
-      {/* ================= HEADER ================= */}
-
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-
+    <div className="pb-10">
+      {/* HEADER */}
+      <div className="pt-4 pb-5 flex items-start justify-between gap-4 flex-wrap">
         <div>
-
-          <h1 className="text-4xl md:text-5xl font-bold gradient-text">
-            Teacher Dashboard 👨‍🏫
+          <h1 className="font-display font-extrabold text-2xl sm:text-[28px] text-ink tracking-tight">
+            Teaching dashboard
           </h1>
-
-          <p className="text-gray-400 mt-2">
-            Manage and organize your academic resources professionally.
+          <p className="text-sm text-muted mt-1">
+            {user?.name ? `${user.name} · ` : ""}Your uploaded study material.
           </p>
-
         </div>
-
-        {/* QUICK STATS */}
-        <div className="grid grid-cols-2 gap-4">
-
-          <div className="
-            glass px-6 py-4 rounded-2xl
-            border border-purple-500/20
-            min-w-[170px]
-          ">
-
-            <div className="flex items-center gap-3">
-
-              <div className="
-                p-3 rounded-xl
-                bg-purple-500/20
-              ">
-                <FolderOpen className="text-purple-400" />
-              </div>
-
-              <div>
-
-                <p className="text-sm text-gray-400">
-                  Total Resources
-                </p>
-
-                <h2 className="text-3xl font-bold text-white">
-                  {resources.length}
-                </h2>
-
-              </div>
-
-            </div>
-
-          </div>
-
-          <div className="
-            glass px-6 py-4 rounded-2xl
-            border border-cyan-500/20
-            min-w-[170px]
-          ">
-
-            <div className="flex items-center gap-3">
-
-              <div className="
-                p-3 rounded-xl
-                bg-cyan-500/20
-              ">
-                <BookOpen className="text-cyan-400" />
-              </div>
-
-              <div>
-
-                <p className="text-sm text-gray-400">
-                  Notes Uploaded
-                </p>
-
-                <h2 className="text-3xl font-bold text-white">
-                  {
-                    resources.filter(
-                      (r) => r.type === "notes"
-                    ).length
-                  }
-                </h2>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
+        <Button variant="primary" iconLeft={Upload} onClick={() => setUploadOpen(true)}>
+          Upload resource
+        </Button>
       </div>
 
-      {/* ================= TABS ================= */}
-
-      <div className="flex gap-4 flex-wrap">
-
-        <button
-          onClick={() => setActiveTab("upload")}
-          className={`
-            px-5 py-3 rounded-xl font-medium transition-all
-            ${
-              activeTab === "upload"
-                ? "bg-gradient-to-r from-purple-500 to-cyan-400 text-white shadow-lg"
-                : "bg-[#0f172a] text-gray-300 border border-gray-700"
-            }
-          `}
-        >
-          <div className="flex items-center gap-2">
-            <Plus size={18} />
-            Upload Resource
-          </div>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("resources")}
-          className={`
-            px-5 py-3 rounded-xl font-medium transition-all
-            ${
-              activeTab === "resources"
-                ? "bg-gradient-to-r from-purple-500 to-cyan-400 text-white shadow-lg"
-                : "bg-[#0f172a] text-gray-300 border border-gray-700"
-            }
-          `}
-        >
-          <div className="flex items-center gap-2">
-            <FolderOpen size={18} />
-            My Resources
-          </div>
-        </button>
-
+      {/* STATS */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <StatTile
+          label="Resources"
+          value={loading ? "—" : stats.total}
+          icon={FileText}
+        />
+        <StatTile
+          label="Total downloads"
+          value={loading ? "—" : stats.downloads}
+          icon={Download}
+        />
+        <StatTile label="Total views" value={loading ? "—" : stats.views} icon={Eye} />
+        <StatTile
+          label="Semesters covered"
+          value={loading ? "—" : stats.semesters}
+          icon={BookOpen}
+        />
       </div>
 
-      {/* ================= UPLOAD TAB ================= */}
-
-      {activeTab === "upload" && (
-
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="
-            glass p-7 rounded-3xl
-            border border-gray-800
-            space-y-6
-          "
-        >
-
-          <div className="flex items-center gap-3">
-
-            <div className="
-              p-3 rounded-2xl
-              bg-gradient-to-r from-purple-500/20 to-cyan-400/20
-            ">
-              <Upload className="text-purple-400" />
-            </div>
-
-            <div>
-
-              <h2 className="text-2xl font-bold text-white">
-                Upload Academic Resource
-              </h2>
-
-              <p className="text-sm text-gray-400">
-                Share notes and PYQs with students.
-              </p>
-
-            </div>
-
+      {/* SEARCH */}
+      {resources.length > 0 && (
+        <div className="card p-3 sm:p-4 mb-5">
+          <div className="relative">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+            />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search your uploads…"
+              className="input pl-9"
+            />
           </div>
-
-          {/* FORM */}
-
-          <div className="grid md:grid-cols-2 gap-5">
-
-            <input
-              type="text"
-              placeholder="Resource Title"
-              value={form.title}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  title: e.target.value,
-                })
-              }
-              className="
-                p-3 rounded-xl
-                bg-[#0f172a]
-                border border-gray-700
-                text-white
-                outline-none
-                focus:ring-2 focus:ring-purple-500
-              "
-            />
-
-            <input
-              type="text"
-              placeholder="Subject (DBMS, CN, OS...)"
-              value={form.subject}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  subject: e.target.value,
-                })
-              }
-              className="
-                p-3 rounded-xl
-                bg-[#0f172a]
-                border border-gray-700
-                text-white
-                outline-none
-                focus:ring-2 focus:ring-purple-500
-              "
-            />
-
-            <select
-              value={form.semester}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  semester: e.target.value,
-                })
-              }
-              className="
-                p-3 rounded-xl
-                bg-[#0f172a]
-                border border-gray-700
-                text-white
-                outline-none
-                focus:ring-2 focus:ring-purple-500
-              "
-            >
-              <option value="">Select Semester</option>
-
-              {[1,2,3,4,5,6,7,8].map((sem) => (
-                <option key={sem} value={sem}>
-                  Semester {sem}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={form.type}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  type: e.target.value,
-                })
-              }
-              className="
-                p-3 rounded-xl
-                bg-[#0f172a]
-                border border-gray-700
-                text-white
-                outline-none
-                focus:ring-2 focus:ring-purple-500
-              "
-            >
-              <option value="notes">Notes</option>
-              <option value="pyq">PYQ</option>
-            </select>
-
-            <input
-              type="text"
-              placeholder="Tags (SQL, Networks, Important...)"
-              value={form.tags}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  tags: e.target.value,
-                })
-              }
-              className="
-                md:col-span-2
-                p-3 rounded-xl
-                bg-[#0f172a]
-                border border-gray-700
-                text-white
-                outline-none
-                focus:ring-2 focus:ring-purple-500
-              "
-            />
-
-            <textarea
-              placeholder="Description"
-              value={form.description}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  description: e.target.value,
-                })
-              }
-              className="
-                md:col-span-2
-                p-4 rounded-xl
-                bg-[#0f172a]
-                border border-gray-700
-                text-white
-                min-h-[140px]
-                outline-none
-                focus:ring-2 focus:ring-purple-500
-              "
-            />
-
-            {/* FILE INPUT */}
-
-            <div className="md:col-span-2">
-
-              <label className="
-                flex items-center justify-center
-                w-full p-5
-                border-2 border-dashed border-purple-500/40
-                rounded-2xl
-                cursor-pointer
-                bg-[#0f172a]
-                hover:border-purple-400
-                transition-all
-              ">
-
-                <div className="text-center space-y-2">
-
-                  <Upload className="mx-auto text-purple-400" />
-
-                  <p className="text-sm text-gray-300">
-                    {form.file
-                      ? form.file.name
-                      : "Click to upload PDF"}
-                  </p>
-
-                </div>
-
-                <input
-                  type="file"
-                  hidden
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      file: e.target.files[0],
-                    })
-                  }
-                />
-
-              </label>
-
-            </div>
-
-          </div>
-
-          {/* BUTTON */}
-
-          <button
-            onClick={uploadResource}
-            className="
-              px-6 py-3 rounded-xl
-              bg-gradient-to-r from-purple-500 to-cyan-400
-              text-white font-semibold
-              hover:scale-105 transition-all
-              shadow-lg
-            "
-          >
-            Upload Resource 🚀
-          </button>
-
-        </motion.div>
-
+        </div>
       )}
 
-      {/* ================= RESOURCES TAB ================= */}
+      {/* LIST */}
+      {loading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-20" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={resources.length === 0 ? LayoutDashboard : Search}
+          title={
+            resources.length === 0
+              ? "No uploads yet"
+              : "Nothing matches that search"
+          }
+          description={
+            resources.length === 0
+              ? "Upload notes, past papers or assignments for your students."
+              : "Try a different title, subject or tag."
+          }
+          action={
+            resources.length === 0 ? (
+              <Button
+                variant="primary"
+                iconLeft={Upload}
+                onClick={() => setUploadOpen(true)}
+              >
+                Upload your first resource
+              </Button>
+            ) : (
+              <Button variant="secondary" onClick={() => setSearch("")}>
+                Clear search
+              </Button>
+            )
+          }
+        />
+      ) : (
+        <ul className="space-y-3">
+          {filtered.map((r) => (
+            <li key={r._id} className="card p-4 flex items-start gap-4">
+              <div className="w-11 h-11 rounded-lg bg-brand-soft flex items-center justify-center shrink-0">
+                <FileText size={18} className="text-brand" />
+              </div>
 
-      {activeTab === "resources" && (
-
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-
-          {/* SEARCH */}
-
-          <div className="relative">
-
-            <Search
-              size={18}
-              className="
-                absolute left-3 top-1/2
-                -translate-y-1/2 text-gray-400
-              "
-            />
-
-            <input
-              type="text"
-              placeholder="Search your resources..."
-              value={search}
-              onChange={(e) =>
-                setSearch(e.target.value)
-              }
-              className="
-                w-full pl-10 pr-4 py-3
-                rounded-xl
-                bg-[#0f172a]
-                border border-gray-700
-                text-white
-                outline-none
-                focus:ring-2 focus:ring-purple-500
-              "
-            />
-
-          </div>
-
-          {/* EMPTY */}
-
-          {filteredResources.length === 0 ? (
-
-            <div className="
-              glass rounded-3xl p-10
-              text-center border border-gray-800
-            ">
-
-              <FolderOpen
-                size={50}
-                className="mx-auto text-gray-500 mb-4"
-              />
-
-              <h3 className="text-xl font-semibold text-white">
-                No Resources Found
-              </h3>
-
-              <p className="text-gray-400 mt-2">
-                Start uploading resources to build your academic library.
-              </p>
-
-            </div>
-
-          ) : (
-
-            <div className="grid md:grid-cols-2 gap-6">
-
-              {filteredResources.map((r) => (
-
-                <motion.div
-                  key={r._id}
-                  whileHover={{
-                    y: -5,
-                    scale: 1.01,
-                  }}
-                  className="
-                    relative overflow-hidden
-                    rounded-3xl
-                    border border-gray-800
-                    bg-gradient-to-br from-[#0f172a] to-[#020617]
-                    p-6
-                    shadow-[0_10px_30px_rgba(0,0,0,0.45)]
-                    hover:border-purple-500/40
-                    hover:shadow-[0_20px_50px_rgba(139,92,246,0.20)]
-                    transition-all
-                  "
-                >
-
-                  {/* TOP */}
-
-                  <div className="flex items-start justify-between gap-4">
-
-                    <div className="flex gap-4">
-
-                      <div className="
-                        p-3 rounded-2xl
-                        bg-gradient-to-br
-                        from-purple-500/20
-                        to-cyan-400/20
-                      ">
-                        <FileText
-                          className="text-purple-400"
-                          size={22}
-                        />
-                      </div>
-
-                      <div>
-
-                        <h3 className="text-xl font-semibold text-white">
-                          {r.title}
-                        </h3>
-
-                        <p className="text-sm text-gray-400 mt-1">
-                          Semester {r.semester}
-                        </p>
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                  {/* DESCRIPTION */}
-
-                  <p className="text-gray-300 mt-5 leading-relaxed">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-semibold text-ink truncate">{r.title}</h3>
+                  {r.type && (
+                    <Badge variant={CAT_VARIANT[r.type] || "neutral"}>
+                      {CAT_LABEL[r.type] || r.type}
+                    </Badge>
+                  )}
+                </div>
+                {r.description && (
+                  <p className="text-sm text-muted line-clamp-1 mt-1">
                     {r.description}
                   </p>
-
-                  {/* SUBJECT */}
-
-                  {r.subject && (
-                    <div className="mt-4">
-                      <span className="
-                        px-3 py-1 rounded-full text-xs
-                        bg-purple-500/20
-                        text-purple-300
-                        border border-purple-500/20
-                      ">
-                        📘 {r.subject}
-                      </span>
-                    </div>
+                )}
+                <div className="flex items-center gap-3 text-xs text-muted mt-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1">
+                    <BookOpen size={12} />
+                    Sem {r.semester}
+                  </span>
+                  {r.subject && <span>· {r.subject}</span>}
+                  <span className="inline-flex items-center gap-1">
+                    <Download size={12} />
+                    {r.downloads || 0}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Eye size={12} />
+                    {r.views || 0}
+                  </span>
+                  {r.createdAt && (
+                    <span>· {dayjs(r.createdAt).format("MMM D, YYYY")}</span>
                   )}
+                </div>
+              </div>
 
-                  {/* TAGS */}
-
-                  {r.tags?.length > 0 && (
-
-                    <div className="flex flex-wrap gap-2 mt-4">
-
-                      {r.tags.map((tag, idx) => (
-                        <span
-                          key={idx}
-                          className="
-                            px-3 py-1 rounded-full text-xs
-                            bg-cyan-500/10
-                            text-cyan-300
-                            border border-cyan-500/20
-                          "
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-
-                    </div>
-
-                  )}
-
-                  {/* ACTIONS */}
-
-                  <div className="flex justify-between items-center mt-7">
-
-                    <button
-                      onClick={() =>
-                        setPreviewFile(r.fileUrl)
-                      }
-                      className="
-                        px-5 py-2 rounded-xl
-                        bg-gradient-to-r
-                        from-purple-500 to-cyan-400
-                        text-white font-medium
-                        flex items-center gap-2
-                        hover:scale-105 transition-all
-                      "
-                    >
-                      <Eye size={16} />
-                      View
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        deleteResource(r._id)
-                      }
-                      className="
-                        p-3 rounded-xl
-                        bg-red-500/10
-                        text-red-400
-                        hover:bg-red-500/20
-                        hover:scale-110
-                        transition-all
-                      "
-                    >
-                      <Trash2 size={18} />
-                    </button>
-
-                  </div>
-
-                  {/* GLOW */}
-
-                  <div className="
-                    absolute inset-0 rounded-3xl opacity-0
-                    hover:opacity-10
-                    bg-gradient-to-r from-purple-500 to-cyan-400
-                    blur-xl transition pointer-events-none
-                  " />
-
-                </motion.div>
-
-              ))}
-
-            </div>
-
-          )}
-
-        </motion.div>
-
+              <div className="flex items-center gap-1 shrink-0">
+                {r.fileUrl && (
+                  <a
+                    href={r.fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="icon-btn !w-9 !h-9 border border-line"
+                    aria-label="Open"
+                    title="Open"
+                  >
+                    <Eye size={16} />
+                  </a>
+                )}
+                <button
+                  onClick={() => handleDelete(r)}
+                  className="icon-btn !w-9 !h-9 border border-line text-red-500 hover:text-red-600"
+                  aria-label="Delete"
+                  title="Delete"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
 
-      {/* ================= PDF VIEWER ================= */}
-
-      {previewFile && (
-        <PDFViewer
-          file={previewFile}
-          onClose={() => setPreviewFile(null)}
-        />
-      )}
-
+      {/* UPLOAD MODAL */}
+      <UploadResource
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onUploaded={() => {
+          setUploadOpen(false);
+          fetchMine();
+        }}
+      />
     </div>
   );
 };
+
+const StatTile = ({ label, value, icon: Icon }) => (
+  <div className="card px-4 py-3 flex items-center gap-3">
+    <div className="w-9 h-9 rounded-lg bg-surface-2 flex items-center justify-center shrink-0">
+      <Icon size={16} className="text-muted" />
+    </div>
+    <div className="min-w-0">
+      <div className="text-lg font-semibold text-ink leading-tight">{value}</div>
+      <div className="text-xs text-muted truncate">{label}</div>
+    </div>
+  </div>
+);
 
 export default TeacherDashboard;

@@ -1,193 +1,241 @@
 import { useState } from "react";
-import API from "../../services/api";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { motion } from "framer-motion";
+import { Eye, EyeOff, UserPlus, GraduationCap, Building2 } from "lucide-react";
+
+import API from "../../services/api";
+import AuthShell from "../../components/auth/AuthShell";
+import { Button } from "../../components/ui";
+
+/* =====================================================
+   REGISTER — POST /api/auth/register
+   Backend accepts role only as "student" | "alumni";
+   anything else (including "admin") falls back to student,
+   so administrator rights can never be self-assigned.
+   Accounts are created with isApproved:false and receive
+   NO token until an admin approves them.
+===================================================== */
+
+const ROLES = [
+  {
+    value: "student",
+    label: "Student",
+    hint: "Currently studying",
+    icon: GraduationCap,
+  },
+  {
+    value: "alumni",
+    label: "Alumni",
+    hint: "Already graduated",
+    icon: Building2,
+  },
+];
 
 const Register = () => {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
     name: "",
+    email: "",
     department: "",
     passOutYear: "",
-    email: "",
     rollNumber: "",
     password: "",
+    role: "student",
   });
-
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setLoading(true);
-
-    try {
-      await API.post("/auth/register", form);
-
-      toast.success(
-        "Registration submitted for admin approval 🚀"
-      );
-
-      navigate("/pending");
-
-    } catch (err) {
-      toast.error(
-        err.response?.data?.message || "Registration failed"
-      );
+    if (form.password.length < 6) {
+      return toast.error("Password must be at least 6 characters");
     }
 
-    setLoading(false);
+    setLoading(true);
+    try {
+      await API.post("/auth/register", form);
+      toast.success("Registration submitted for admin approval");
+      navigate("/pending");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden py-10 px-4">
-
-      {/* 🎥 BACKGROUND VIDEO */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-      >
-        <source src="/videos/login.mp4" type="video/mp4" />
-      </video>
-
-      {/* 🌑 OVERLAY */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
-
-      {/* ✨ GLOW EFFECT */}
-      <div className="absolute w-[600px] h-[600px] bg-cyan-500/20 blur-3xl rounded-full top-[-150px] right-[-150px]"></div>
-
-      {/* REGISTER FORM */}
-      <motion.form
-        onSubmit={handleSubmit}
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-full max-w-md backdrop-blur-xl bg-white/10 dark:bg-gray-900/30 p-8 rounded-3xl shadow-2xl border border-white/20 space-y-5"
-      >
-
-        {/* TITLE */}
-        <div className="text-center space-y-2">
-
-          <h2 className="text-4xl font-bold text-white">
-            Join NEXUS 🚀
-          </h2>
-
-          <p className="text-gray-200 text-sm">
-            Build your network. Shape your future.
-          </p>
-
+    <AuthShell
+      title="Create your account"
+      subtitle="An admin reviews every registration before access is granted."
+      footer={
+        <p className="text-sm text-muted text-center">
+          Already registered?{" "}
+          <Link to="/login" className="font-semibold text-brand hover:underline">
+            Sign in
+          </Link>
+        </p>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* ROLE */}
+        <div>
+          <Label>I am a</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {ROLES.map((r) => {
+              const Icon = r.icon;
+              const active = form.role === r.value;
+              return (
+                <button
+                  key={r.value}
+                  type="button"
+                  onClick={() => setForm((p) => ({ ...p, role: r.value }))}
+                  aria-pressed={active}
+                  className={`flex items-start gap-2.5 p-3 rounded-xl border text-left transition-colors ${
+                    active
+                      ? "border-brand bg-brand-soft"
+                      : "border-line bg-surface-2 hover:border-brand/50"
+                  }`}
+                >
+                  <Icon
+                    size={16}
+                    className={`mt-0.5 shrink-0 ${
+                      active ? "text-brand" : "text-muted"
+                    }`}
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-ink">
+                      {r.label}
+                    </span>
+                    <span className="block text-[11px] text-muted">
+                      {r.hint}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* FULL NAME */}
-        <input
-          type="text"
-          required
-          placeholder="Full Name"
-          className="w-full p-3 rounded-xl bg-white/20 border border-white/20 text-white placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          onChange={(e) =>
-            setForm({ ...form, name: e.target.value })
-          }
-        />
+        <div>
+          <Label htmlFor="name">Full name</Label>
+          <input
+            id="name"
+            required
+            autoComplete="name"
+            value={form.name}
+            onChange={set("name")}
+            placeholder="Your full name"
+            className="input"
+          />
+        </div>
 
-        {/* DEPARTMENT */}
-        <input
-          type="text"
-          required
-          placeholder="Department"
-          className="w-full p-3 rounded-xl bg-white/20 border border-white/20 text-white placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-          onChange={(e) =>
-            setForm({
-              ...form,
-              department: e.target.value,
-            })
-          }
-        />
+        <div>
+          <Label htmlFor="email">Email</Label>
+          <input
+            id="email"
+            type="email"
+            required
+            autoComplete="email"
+            value={form.email}
+            onChange={set("email")}
+            placeholder="you@college.edu"
+            className="input"
+          />
+        </div>
 
-        {/* PASSOUT YEAR */}
-        <input
-          type="number"
-          required
-          placeholder="Pass Out Year"
-          className="w-full p-3 rounded-xl bg-white/20 border border-white/20 text-white placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          onChange={(e) =>
-            setForm({
-              ...form,
-              passOutYear: e.target.value,
-            })
-          }
-        />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="department">Department</Label>
+            <input
+              id="department"
+              required
+              value={form.department}
+              onChange={set("department")}
+              placeholder="e.g. CSE"
+              className="input"
+            />
+          </div>
+          <div>
+            <Label htmlFor="passOutYear">
+              {form.role === "alumni" ? "Pass-out year" : "Expected year"}
+            </Label>
+            <input
+              id="passOutYear"
+              type="number"
+              required
+              min="1950"
+              max="2100"
+              value={form.passOutYear}
+              onChange={set("passOutYear")}
+              placeholder="e.g. 2026"
+              className="input"
+            />
+          </div>
+        </div>
 
-        {/* EMAIL */}
-        <input
-          type="email"
-          required
-          placeholder="Email ID"
-          className="w-full p-3 rounded-xl bg-white/20 border border-white/20 text-white placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-          onChange={(e) =>
-            setForm({
-              ...form,
-              email: e.target.value,
-            })
-          }
-        />
+        <div>
+          <Label htmlFor="rollNumber">Roll number</Label>
+          <input
+            id="rollNumber"
+            required
+            value={form.rollNumber}
+            onChange={set("rollNumber")}
+            placeholder="Your college roll number"
+            className="input"
+          />
+        </div>
 
-        {/* ROLL NUMBER */}
-        <input
-          type="text"
-          required
-          placeholder="Roll No / Registration Number"
-          className="w-full p-3 rounded-xl bg-white/20 border border-white/20 text-white placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          onChange={(e) =>
-            setForm({
-              ...form,
-              rollNumber: e.target.value,
-            })
-          }
-        />
+        <div>
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <input
+              id="password"
+              type={showPw ? "text" : "password"}
+              required
+              minLength={6}
+              autoComplete="new-password"
+              value={form.password}
+              onChange={set("password")}
+              placeholder="At least 6 characters"
+              className="input pr-11"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw((s) => !s)}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 icon-btn !w-8 !h-8 text-muted"
+              aria-label={showPw ? "Hide password" : "Show password"}
+            >
+              {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+        </div>
 
-        {/* PASSWORD */}
-        <input
-          type="password"
-          required
-          placeholder="Password"
-          className="w-full p-3 rounded-xl bg-white/20 border border-white/20 text-white placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-          onChange={(e) =>
-            setForm({
-              ...form,
-              password: e.target.value,
-            })
-          }
-        />
-
-        {/* BUTTON */}
-        <button
-          disabled={loading}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-400 text-white font-semibold hover:scale-105 transition-all duration-300 shadow-lg"
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          loading={loading}
+          iconLeft={UserPlus}
         >
-          {loading ? "Submitting..." : "Register"}
-        </button>
-
-        {/* LOGIN LINK */}
-        <div className="text-center text-sm text-white">
-
-          Already have an account?{" "}
-
-          <span
-            onClick={() => navigate("/login")}
-            className="text-cyan-300 font-semibold cursor-pointer hover:underline"
-          >
-            Login
-          </span>
-
-        </div>
-
-      </motion.form>
-    </div>
+          Request access
+        </Button>
+      </form>
+    </AuthShell>
   );
 };
+
+const Label = ({ htmlFor, children }) => (
+  <label
+    htmlFor={htmlFor}
+    className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5"
+  >
+    {children}
+  </label>
+);
 
 export default Register;

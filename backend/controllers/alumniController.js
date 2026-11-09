@@ -1,31 +1,65 @@
 import User from "../models/User.js";
 
-// 🔍 Get alumni with filters
+const escapeRegExp = (s) =>
+  String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * GET /api/alumni
+ *
+ * Supports optional query params (all filters combine with AND):
+ *   name       — case-insensitive substring on name
+ *   company    — raw or normalised match
+ *   year       — exact graduationYear (number)
+ *   location   — case-insensitive substring
+ *   domain     — case-insensitive substring
+ *   skills     — comma-separated list; matches any (case-insensitive)
+ *
+ * Password is select:false on the model, so it will never be returned.
+ * Belt-and-braces: .select("-password") is added anyway.
+ */
 export const getAlumni = async (req, res) => {
   try {
-    const { company, year, location } = req.query;
+    const { name, company, year, location, domain, skills } = req.query;
 
-    let query = { isAlumni: true };
+    const query = { isAlumni: true, isApproved: true };
 
-    // 🔹 Company filter (supports normalized search)
+    if (name) {
+      query.name = { $regex: escapeRegExp(name), $options: "i" };
+    }
+
     if (company) {
+      const safe = escapeRegExp(company);
       query.$or = [
-        { company: { $regex: company, $options: "i" } },
-        { companyNormalized: company.toLowerCase() },
+        { company: { $regex: safe, $options: "i" } },
+        { companyNormalized: company.toLowerCase().trim() },
       ];
     }
 
-    // 🔹 Year filter (FIX: convert to Number)
     if (year) {
-      query.graduationYear = Number(year);
+      const n = Number(year);
+      if (!Number.isNaN(n)) query.graduationYear = n;
     }
 
-    // 🔹 Location filter (optional future use)
     if (location) {
-      query.location = { $regex: location, $options: "i" };
+      query.location = { $regex: escapeRegExp(location), $options: "i" };
     }
 
-    const users = await User.find(query).sort({ createdAt: -1 });
+    if (domain) {
+      query.domain = { $regex: escapeRegExp(domain), $options: "i" };
+    }
+
+    if (skills) {
+      const list = String(skills)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => new RegExp(escapeRegExp(s), "i"));
+      if (list.length) query.skills = { $in: list };
+    }
+
+    const users = await User.find(query)
+      .select("-password")
+      .sort({ createdAt: -1 });
 
     res.json(users);
   } catch (error) {
@@ -33,22 +67,30 @@ export const getAlumni = async (req, res) => {
   }
 };
 
-
-// 📊 Company grouping (Top companies)
+/**
+ * GET /api/alumni/stats
+ * Top companies by alumni count (top 10).
+ */
 export const getCompanyStats = async (req, res) => {
   try {
     const stats = await User.aggregate([
-      { $match: { isAlumni: true, companyNormalized: { $ne: "" } } },
-
       {
-        $group: {
-          _id: "$companyNormalized", // 🔥 use normalized
-          count: { $sum: 1 },
+        $match: {
+          isAlumni: true,
+          isApproved: true,
+          companyNormalized: { $nin: ["", null] },
         },
       },
-
-      { $sort: { count: -1 } }, // 🔥 top companies first
-      { $limit: 10 }, // 🔥 optional: top 10
+      {
+        $group: {
+          _id: "$companyNormalized",
+          count: { $sum: 1 },
+          // Keep an original-case label for the UI (first one wins).
+          label: { $first: "$company" },
+        },
+      },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
     ]);
 
     res.json(stats);
@@ -57,16 +99,50 @@ export const getCompanyStats = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/alumni/year-stats
+ * Graduation-year distribution (ascending by year).
+ */
+export const getYearStats = async (req, res) => {
+  try {
+    const stats = await User.aggregate([
+      {
+        $match: {
+          isAlumni: true,
+          isApproved: true,
+          graduationYear: { $exists: true, $ne: null, $gt: 0 },
+        },
+      },
+      {
+        $group: {
+          _id: "$graduationYear",
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
 
-// 🏢 Get alumni by company (company page)
+    res.json(stats.map((s) => ({ year: s._id, count: s.count })));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * GET /api/alumni/company/:company
+ * Alumni by normalised company.
+ */
 export const getAlumniByCompany = async (req, res) => {
   try {
-    const company = req.params.company.toLowerCase();
+    const company = String(req.params.company || "").toLowerCase();
 
     const users = await User.find({
       isAlumni: true,
+      isApproved: true,
       companyNormalized: company,
-    }).sort({ graduationYear: -1 });
+    })
+      .select("-password")
+      .sort({ graduationYear: -1 });
 
     res.json(users);
   } catch (error) {

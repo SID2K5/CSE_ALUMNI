@@ -1,3 +1,4 @@
+import { avatarUrl } from "../../utils/avatar";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -340,7 +341,7 @@ const Connections = () => {
                   <img
                     src={
                       r.sender.profilePic ||
-                      "https://via.placeholder.com/80"
+                      avatarUrl(r.sender, 80)
                     }
                     alt=""
                     className="w-14 h-14 rounded-full object-cover border-2 border-cyan-400"
@@ -538,7 +539,7 @@ const Connections = () => {
                 <img
                   src={
                     u.profilePic ||
-                    "https://via.placeholder.com/100"
+                    avatarUrl(u, 100)
                   }
                   alt=""
                   className="w-20 h-20 rounded-full object-cover border-4 border-cyan-400"

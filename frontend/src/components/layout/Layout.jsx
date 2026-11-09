@@ -1,40 +1,38 @@
 import Navbar from "./Navbar";
 import Topbar from "./Topbar";
+import MobileNav from "./MobileNav";
+
+/* =====================================================
+   APPLICATION SHELL
+   Fixed dark sidebar (260px, desktop) + themed topbar +
+   spacious content column. Mobile falls back to the
+   bottom nav + drawer in MobileNav.
+===================================================== */
 
 const Layout = ({ children }) => {
   return (
-    <div className="min-h-screen bg-[#B8FFFF] dark:bg-[#020617] overflow-x-hidden">
+    <div className="min-h-screen bg-bg text-ink overflow-x-hidden">
+      {/* FIXED DARK SIDEBAR (desktop) */}
+      <Navbar />
 
-      {/* TOPBAR */}
-      <Topbar />
+      {/* CONTENT COLUMN — offset by the sidebar on desktop */}
+      <div className="md:pl-[260px]">
+        <Topbar />
 
-      {/* MAIN WRAPPER */}
-      <div className="flex w-full">
-
-        {/* SIDEBAR SPACE */}
-        <div className="hidden md:block w-[240px] shrink-0">
-          <Navbar />
-        </div>
-
-        {/* MAIN CONTENT */}
         <main
           className="
-            flex-1
-            pt-20
-            px-4
-            md:px-6
-            lg:px-8
-            w-full
-            overflow-x-hidden
+            w-full min-w-0
+            pt-[72px]
+            px-4 sm:px-6 lg:px-8
+            pb-24 md:pb-10
           "
         >
-          <div className="w-full max-w-[1400px] mx-auto">
-            {children}
-          </div>
+          <div className="w-full max-w-shell mx-auto">{children}</div>
         </main>
-
       </div>
 
+      {/* MOBILE BOTTOM NAVIGATION */}
+      <MobileNav />
     </div>
   );
 };

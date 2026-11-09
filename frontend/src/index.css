@@ -2,25 +2,144 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ================= GLOBAL ================= */
+/* =====================================================
+   DESIGN TOKENS
+   Semantic variables that flip between light / dark.
+   Consumed by Tailwind via the `colors` map (bg, surface,
+   line, ink, muted, brand) and by the component classes below.
+===================================================== */
 
-* {
-  box-sizing: border-box;
+:root {
+  /* ===== LIGHT — PREMIUM PORCELAIN ===== */
+  --bg: #F4F6FA;
+  --bg-secondary: #EDF1F7;
+  --surface: #FFFFFF;
+  --surface-elevated: #FAFBFE;
+  --surface-hover: #F0F2F8;
+  --border: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --divider: #E8EDF4;
 
-  transition:
-    background-color 0.3s,
-    color 0.3s,
-    border 0.3s,
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
+  --text-primary: #182338;
+  --text-secondary: #657186;   /* spec #68758A was 4.31:1 on --bg; darkened to 4.54 */
+  --text-muted: #6D7684;       /* spec #8B96A8 was 2.99:1 on surface; now 4.61 */
+
+  --primary: #465DAB;
+  --primary-hover: #344785;
+  --primary-active: #293B79;
+  --primary-soft: #E9EDFF;
+  --primary-contrast: #FFFFFF;
+
+  --accent: #8B7BE8;
+  --accent-strong: #705DCE;
+  --accent-soft: #F0EDFF;
+
+  --success: #157C56;          /* spec was 4.20:1 on its soft bg; now 4.64 */
+  --success-soft: #E7F6EF;
+  --warning: #945F14;          /* spec #A66B16 was 4.06:1 on its soft bg; now 4.8 */
+  --warning-soft: #FFF4DE;
+  --danger: #B6414E;           /* spec was 4.06:1 on its soft bg; now 4.72 */
+  --danger-soft: #FCEAEC;
+  --info: #465DAB;
+  --info-soft: #E9EDFF;
+  --verified: #128C88;
+
+  --gradient-primary: linear-gradient(110deg, #465DAB, #705DCE);
+  --gradient-lavender: linear-gradient(110deg, #8B7BE8, #B8A5FF);
+
+  --shadow-card: 0 4px 14px rgba(24, 35, 56, 0.06);
+  --shadow-elevated: 0 8px 28px rgba(24, 35, 56, 0.1);
+
+  /* ---- Legacy aliases ----------------------------------------------
+     Existing Tailwind keys (ink / muted / line / brand / surface-2)
+     resolve through these, so ~40 component files need no rewrite.
+     The spec names above are the canonical source of truth. */
+  --ink: var(--text-primary);
+  --muted: var(--text-secondary);
+  --line: var(--border);
+  --surface-2: var(--surface-hover);
+  --brand: var(--primary);
+  --brand-ink: var(--primary-contrast);
+  --brand-2: var(--accent);
+  --brand-soft: var(--primary-soft);
+
+  /* Topbar sits on the content side, so it follows the theme. */
+  --nav-bg: var(--surface);
+  --nav-ink: var(--text-primary);
+
+  color-scheme: light;
 }
 
-/* Smooth scrolling */
+.dark {
+  /* ===== DARK — MIDNIGHT NAVY ===== */
+  --bg: #0B1220;
+  --bg-secondary: #101A2B;
+  --surface: #152238;
+  --surface-elevated: #1B2B43;
+  --surface-hover: #20314B;
+  --border: #293A53;
+  --border-strong: #3A4D69;
+  --divider: #25364D;
+
+  --text-primary: #F4F7FC;
+  --text-secondary: #A4B1C4;
+  --text-muted: #7D8CA3;
+
+  --primary: #91A7FF;
+  --primary-hover: #748CEB;
+  --primary-active: #637BD8;
+  --primary-soft: #26375A;
+  --primary-contrast: #0B1220;
+
+  --accent: #B8A5FF;
+  --accent-strong: #C9BBFF;
+  --accent-soft: #30294D;
+
+  --success: #49D6A0;
+  --success-soft: #173B34;
+  --warning: #F3C46D;
+  --warning-soft: #49391F;
+  --danger: #FF8290;
+  --danger-soft: #482630;
+  --info: #91A7FF;
+  --info-soft: #26375A;
+  --verified: #49D6C7;
+
+  --gradient-primary: linear-gradient(110deg, #748CEB, #B8A5FF);
+  --gradient-hero: linear-gradient(110deg, #101A2B, #26375A);
+
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.22);
+  --shadow-elevated: 0 10px 32px rgba(0, 0, 0, 0.34);
+
+  color-scheme: dark;
+}
+
+/* =====================================================
+   SIDEBAR — intentionally DARK IN BOTH THEMES.
+   Declared on both :root and .dark so it never flips.
+===================================================== */
+:root,
+.dark {
+  --sidebar-bg: #101A2B;
+  --sidebar-surface: #1B2B43;
+  --sidebar-hover: #20314B;
+  --sidebar-active: #26375A;
+  --sidebar-border: #293A53;
+  --sidebar-text: #F4F7FC;
+  --sidebar-text-secondary: #A4B1C4;
+  --sidebar-icon: #A4B1C4;
+  --sidebar-icon-active: #B8A5FF;
+}
+
+/* =====================================================
+   BASE
+===================================================== */
+
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
-/* Prevent browser inconsistencies */
 html,
 body,
 #root {
@@ -28,162 +147,238 @@ body,
   min-height: 100%;
   margin: 0;
   padding: 0;
-
   overflow-x: hidden;
 }
 
-/* Better image rendering */
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: "Sora", "Inter", ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
 img {
   max-width: 100%;
   display: block;
 }
 
-/* Better font rendering */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* ================= LIGHT MODE ================= */
-
-body {
-  background-color: #B8FFFF;
-  color: black;
-}
-
-/* Premium Card - LIGHT MODE */
-.glass {
-  background: rgba(255, 255, 255, 0.92);
-
-  border: 1px solid rgba(31, 41, 55, 0.15);
-
-  border-radius: 24px;
-
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-
-  box-shadow:
-    0 10px 30px rgba(0, 0, 0, 0.08),
-    0 2px 10px rgba(0, 0, 0, 0.04);
-
-  overflow: hidden;
-}
-
-/* ================= DARK MODE ================= */
-
-.dark body {
-  background-color: #0B1120;
-  color: white;
-}
-
-/* Force readable white text in dark mode */
-.dark,
-.dark p,
-.dark h1,
-.dark h2,
-.dark h3,
-.dark h4,
-.dark span,
-.dark div,
-.dark label,
-.dark button {
-  color: white !important;
-}
-
-/* Premium Card - DARK MODE */
-.dark .glass {
-  background: rgba(15, 23, 42, 0.72);
-
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-
-  border: 1px solid rgba(255, 255, 255, 0.06);
-
-  box-shadow:
-    0 10px 35px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-
-/* ================= COMMON UI ================= */
-
-/* Gradient Text */
-.gradient-text {
-  background: linear-gradient(
-    90deg,
-    #7C3AED,
-    #06B6D4
-  );
-
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* Primary Button */
-.btn-primary {
-  padding: 10px 18px;
-
-  border-radius: 14px;
-
-  background: linear-gradient(
-    to right,
-    #7C3AED,
-    #06B6D4
-  );
-
-  color: white !important;
-
-  font-weight: 600;
-
-  border: none;
-
-  cursor: pointer;
-
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px) scale(1.03);
-
-  box-shadow:
-    0 8px 24px rgba(124, 58, 237, 0.35);
-}
-
-/* Premium Hover Effect */
-.glass:hover {
-  transform: translateY(-4px);
-
-  box-shadow:
-    0 14px 34px rgba(0, 0, 0, 0.12),
-    0 4px 12px rgba(0, 0, 0, 0.06);
-}
-
-/* ================= INPUTS ================= */
-
 input,
 textarea,
-select {
+select,
+button {
   font-family: inherit;
 }
 
-/* Chrome autofill fix */
-input:-webkit-autofill {
-  -webkit-box-shadow:
-    0 0 0 1000px transparent inset !important;
-
-  -webkit-text-fill-color:
-    inherit !important;
-
-  transition:
-    background-color 9999s ease-in-out 0s;
+/* Only animate things that should animate — NOT every element. */
+a,
+button,
+.card,
+.chip,
+.icon-btn,
+.nav-item,
+[role="button"] {
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 }
 
-/* ================= SCROLLBAR ================= */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
-/* Default scrollbar */
+/* =====================================================
+   DARK-MODE LEGACY COMPAT
+   Older screens use a bare `text-black` with no dark variant.
+   This single, scoped shim keeps them readable in dark mode
+   without the old `.dark * { color:#fff !important }` hammer,
+   and it does NOT touch the semantic text utilities below.
+===================================================== */
+
+.dark .text-black {
+  color: var(--ink);
+}
+
+/* =====================================================
+   COMPONENT PRIMITIVES
+===================================================== */
+
+/* Surface card */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow-card);
+}
+
+/* Frosted-glass card (kept for hero / overlay surfaces) */
+.glass {
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+/* Gradient brand text */
+.gradient-text {
+  background: linear-gradient(90deg, var(--brand), var(--brand-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Primary button */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 14px;
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(124, 58, 237, 0.34);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Ghost / secondary button */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-ghost:hover {
+  background: color-mix(in srgb, var(--surface-2) 80%, var(--ink) 6%);
+}
+
+/* Icon button */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  color: inherit; /* inherit so icons match topbar (nav-ink) or body (ink) */
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.icon-btn:hover {
+  background: rgba(0, 0, 0, 0.08); /* works on both pink nav and light surfaces */
+}
+.dark .icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Form field */
+.input {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--muted);
+}
+
+.input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+/* Chip / tag */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--ink);
+}
+
+.chip-active {
+  background: var(--brand-soft);
+  color: var(--brand);
+  border-color: color-mix(in srgb, var(--brand) 40%, transparent);
+}
+
+/* =====================================================
+   INPUT AUTOFILL FIX
+===================================================== */
+
+input:-webkit-autofill,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset !important;
+  -webkit-text-fill-color: var(--ink) !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* =====================================================
+   SCROLLBARS
+===================================================== */
+
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -191,24 +386,22 @@ input:-webkit-autofill {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    to bottom,
-    #7C3AED,
-    #06B6D4
-  );
-
+  background: color-mix(in srgb, var(--muted) 45%, transparent);
   border-radius: 20px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
-/* Firefox scrollbar */
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
+  background-clip: padding-box;
+}
+
 * {
   scrollbar-width: thin;
-  scrollbar-color: #7C3AED transparent;
+  scrollbar-color: color-mix(in srgb, var(--muted) 45%, transparent) transparent;
 }
 
-/* ================= HIDDEN SCROLLBAR ================= */
-
-/* Utility for premium hidden scrolling */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -218,109 +411,58 @@ input:-webkit-autofill {
   display: none;
 }
 
-/* ================= PREMIUM SIDEBAR SCROLL ================= */
-
-/* Smooth touch scrolling */
 .sidebar-scroll {
   overflow-y: auto;
-
   -webkit-overflow-scrolling: touch;
-
   overscroll-behavior: contain;
 }
 
-/* ================= SWIPER / MEDIA CAROUSEL ================= */
+/* =====================================================
+   SWIPER / MEDIA CAROUSEL
+===================================================== */
 
 .swiper {
   width: 100%;
   height: 100%;
 }
 
-/* Navigation Buttons */
 .swiper-button-next,
 .swiper-button-prev {
-  color: white !important;
-
-  width: 42px !important;
-  height: 42px !important;
-
+  color: #fff !important;
+  width: 38px !important;
+  height: 38px !important;
   background: rgba(0, 0, 0, 0.45);
-
   backdrop-filter: blur(10px);
-
   border-radius: 999px;
-
-  transition:
-    transform 0.25s ease,
-    background 0.25s ease;
 }
 
 .swiper-button-next:hover,
 .swiper-button-prev:hover {
-  transform: scale(1.08);
-
   background: rgba(124, 58, 237, 0.85);
 }
 
-/* Arrow Icon Size */
 .swiper-button-next::after,
 .swiper-button-prev::after {
-  font-size: 16px !important;
-
-  font-weight: bold;
+  font-size: 15px !important;
+  font-weight: 700;
 }
 
-/* Pagination */
 .swiper-pagination {
   bottom: 12px !important;
 }
 
-/* Pagination Bullet */
 .swiper-pagination-bullet {
   background: rgba(255, 255, 255, 0.7) !important;
-
   width: 8px;
   height: 8px;
-
   opacity: 1 !important;
-
-  transition:
-    transform 0.25s ease,
-    background 0.25s ease;
 }
 
-/* Active Bullet */
 .swiper-pagination-bullet-active {
-  background: #a855f7 !important;
-
+  background: var(--brand) !important;
   transform: scale(1.3);
 }
 
-/* Media animation */
-.swiper-slide img,
-.swiper-slide video {
-  transition:
-    transform 0.4s ease;
-}
-
-.swiper-slide img:hover,
-.swiper-slide video:hover {
-  transform: scale(1.01);
-}
-
-/* ================= PREMIUM MEDIA SHADOW ================= */
-
 .media-shadow {
-  box-shadow:
-    0 15px 35px rgba(0, 0, 0, 0.25);
-}
-
-/* ================= GLASS OVERLAY ================= */
-
-.glass-overlay {
-  background: rgba(255, 255, 255, 0.08);
-
-  backdrop-filter: blur(12px);
-
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
 }

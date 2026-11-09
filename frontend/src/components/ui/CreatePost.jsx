@@ -214,16 +214,7 @@ const CreatePost = ({
         opacity: 1,
         y: 0,
       }}
-      className="
-        glass
-        rounded-3xl
-        p-5
-        border
-        border-gray-200
-        dark:border-gray-800
-        shadow-sm
-        space-y-5
-      "
+      className="card p-4 sm:p-5 space-y-4"
     >
 
       {/* ===================================================== */}
@@ -237,19 +228,11 @@ const CreatePost = ({
             e.target.value
           )
         }
-        placeholder="
-          Share something with the community...
-        "
+        placeholder="Share something with the community…"
         className="
-          w-full
-          min-h-[120px]
-          resize-none
-          bg-transparent
-          text-black
-          dark:text-white
-          placeholder:text-gray-500
-          focus:outline-none
-          text-[15px]
+          w-full min-h-[96px] resize-none bg-transparent
+          text-ink placeholder:text-muted
+          focus:outline-none text-[15px] leading-relaxed
         "
       />
 
@@ -391,106 +374,37 @@ const CreatePost = ({
 
           {/* MEDIA */}
 
-          <label
-            className="
-              cursor-pointer
-              p-3
-              rounded-xl
-              hover:bg-gray-100
-              dark:hover:bg-gray-800
-              transition
-            "
-          >
-
-            <Image
-              className="
-                text-purple-500
-              "
-            />
-
+          <label className="icon-btn cursor-pointer" title="Add photos">
+            <Image size={20} className="text-brand" />
             <input
               type="file"
               multiple
               accept="image/*"
               hidden
-              onChange={
-                handleMedia
-              }
+              onChange={handleMedia}
             />
-
           </label>
 
           {/* CODE */}
 
           <button
             onClick={() => {
-
-              const code =
-                prompt(
-                  "Paste code snippet"
-                );
-
-              if (code) {
-
-                setCodeSnippet(
-                  code
-                );
-
-              }
-
+              const code = prompt("Paste code snippet");
+              if (code) setCodeSnippet(code);
             }}
-            className="
-              p-3
-              rounded-xl
-              hover:bg-gray-100
-              dark:hover:bg-gray-800
-              transition
-            "
+            className="icon-btn"
+            title="Add code snippet"
           >
-
-            <Code2
-              className="
-                text-cyan-500
-              "
-            />
-
+            <Code2 size={20} className="text-brand-2" />
           </button>
 
         </div>
 
         {/* POST */}
 
-        <button
-          onClick={
-            handleSubmit
-          }
-          disabled={loading}
-          className="
-            flex
-            items-center
-            gap-2
-            px-5
-            py-3
-            rounded-2xl
-            bg-gradient-to-r
-            from-purple-500
-            to-cyan-400
-            text-white
-            font-semibold
-            hover:scale-105
-            transition
-            disabled:opacity-50
-          "
-        >
-
+        <button onClick={handleSubmit} disabled={loading} className="btn-primary">
           <Send size={18} />
-
-          {
-            loading
-              ? "Posting..."
-              : "Post"
-          }
-
+          {loading ? "Posting…" : "Post"}
         </button>
 
       </div>

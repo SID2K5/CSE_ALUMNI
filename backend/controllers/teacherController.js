@@ -5,27 +5,49 @@ import Post from "../models/Post.js";
 // =========================
 // GET ALL TEACHERS
 // =========================
+const escapeRegExp = (s) =>
+  String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export const getTeachers = async (req, res) => {
   try {
-    const { search } = req.query;
+    const { search, department, specialization } = req.query;
 
-    let query = {
+    const query = {
       role: "teacher",
       isApproved: true,
     };
 
-    // Search by teacher name
+    // Free-text search spans name, department and specialization.
     if (search) {
-      query.name = {
-        $regex: search,
+      const rx = { $regex: escapeRegExp(search), $options: "i" };
+      query.$or = [
+        { name: rx },
+        { department: rx },
+        { specialization: rx },
+        { designation: rx },
+      ];
+    }
+
+    // Explicit filters
+    if (department) {
+      query.department = {
+        $regex: escapeRegExp(department),
         $options: "i",
       };
     }
 
-    const teachers = await User.find(query);
+    if (specialization) {
+      query.specialization = {
+        $regex: escapeRegExp(specialization),
+        $options: "i",
+      };
+    }
+
+    const teachers = await User.find(query)
+      .select("-password")
+      .sort({ name: 1 });
 
     res.json(teachers);
-
   } catch (error) {
     res.status(500).json({
       message: error.message,
@@ -40,7 +62,7 @@ export const getTeacherProfile = async (req, res) => {
   try {
 
     // Teacher Details
-    const teacher = await User.findById(req.params.id);
+    const teacher = await User.findById(req.params.id).select("-password");
 
     if (!teacher) {
       return res.status(404).json({

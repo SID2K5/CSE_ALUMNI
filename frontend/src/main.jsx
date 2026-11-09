@@ -18,26 +18,35 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         {/* 🔥 ONLINE USERS CONTEXT (NEW) */}
         <OnlineProvider>
 
-          {/* 🔔 Premium Toast Config */}
+          {/* Toasts.
+              Previously: white text on #10b981 (2.54:1) and #ef4444
+              (3.76:1) — both below the WCAG AA 4.5:1 minimum.
+              Now a single dark neutral surface (white on #111827 is
+              ~16:1) with a coloured left bar to signal the variant,
+              which also keeps accent colour restrained. */}
           <Toaster
             position="top-right"
             toastOptions={{
               duration: 3000,
               style: {
-                background: "#1f2937",
-                color: "#fff",
-                borderRadius: "10px",
-                padding: "12px",
+                background: "#111827",
+                color: "#F8FAFC",
+                borderRadius: "12px",
+                padding: "12px 14px",
+                fontSize: "14px",
+                border: "1px solid #1F2937",
+                borderLeftWidth: "3px",
+                borderLeftColor: "#64748B",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+                maxWidth: "380px",
               },
               success: {
-                style: {
-                  background: "#10b981",
-                },
+                iconTheme: { primary: "#34D399", secondary: "#111827" },
+                style: { borderLeftColor: "#34D399" },
               },
               error: {
-                style: {
-                  background: "#ef4444",
-                },
+                iconTheme: { primary: "#F87171", secondary: "#111827" },
+                style: { borderLeftColor: "#F87171" },
               },
             }}
           />
