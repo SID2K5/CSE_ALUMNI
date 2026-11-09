@@ -67,12 +67,10 @@ const Topbar = () => {
   };
 
   const markAllRead = async () => {
+    // Single bulk call — the /read-all route was previously shadowed by
+    // PUT /:id, so this used to fan out one request per notification.
     try {
-      await Promise.all(
-        notifications.map((n) =>
-          !n.isRead ? API.put(`/notifications/${n._id}`) : null
-        )
-      );
+      await API.put("/notifications/read-all");
       fetchNotifications();
     } catch (err) {
       console.error(err);

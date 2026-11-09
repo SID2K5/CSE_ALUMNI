@@ -25,14 +25,18 @@ router.get("/", protect, getNotifications);
 router.get("/unread", protect, getUnreadCount);
 
 /* =====================================================
+   ✅ MARK ALL AS READ
+   NOTE: must stay ABOVE "/:id" — Express matches in order,
+   so a literal route declared after "/:id" would be shadowed
+   (PUT /notifications/read-all was hitting markAsRead with
+   id="read-all" and could never succeed).
+===================================================== */
+router.put("/read-all", protect, markAllAsRead);
+
+/* =====================================================
    ✅ MARK SINGLE AS READ
 ===================================================== */
 router.put("/:id", protect, markAsRead);
-
-/* =====================================================
-   ✅ MARK ALL AS READ
-===================================================== */
-router.put("/read-all", protect, markAllAsRead);
 
 /* =====================================================
    🗑️ DELETE NOTIFICATION
