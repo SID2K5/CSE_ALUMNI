@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import Post from "../models/Post.js";
 import Event from "../models/Event.js";
+import Job from "../models/Job.js";
 
 /* =====================================================
    DASHBOARD
@@ -50,6 +51,38 @@ export const getStats = async (
         },
       });
 
+    /* =====================================================
+       Additional real counts for the admin dashboard cards.
+       All derived from live collections — no estimates.
+    ===================================================== */
+
+    const events =
+      await Event.countDocuments({
+        deletedAt: null,
+      });
+
+    const jobs =
+      await Job.countDocuments({
+        status: "approved",
+      });
+
+    const pendingJobs =
+      await Job.countDocuments({
+        status: "pending",
+      });
+
+    const alumni =
+      await User.countDocuments({
+        isAlumni: true,
+        isApproved: true,
+      });
+
+    const students =
+      await User.countDocuments({
+        role: "student",
+        isApproved: true,
+      });
+
     res.json({
       users,
       posts,
@@ -57,6 +90,13 @@ export const getStats = async (
       pendingEvents,
       teachers,
       reportedPosts,
+
+      // new
+      events,
+      jobs,
+      pendingJobs,
+      alumni,
+      students,
     });
 
   } catch (error) {
