@@ -215,7 +215,11 @@ button,
 
 /* =====================================================
    COMPONENT PRIMITIVES
+   Wrapped in @layer components so Tailwind utilities
+   (pl-9, pr-10, etc.) always win in the cascade.
 ===================================================== */
+
+@layer components {
 
 /* Surface card */
 .card {
@@ -303,24 +307,32 @@ button,
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  color: inherit; /* inherit so icons match topbar (nav-ink) or body (ink) */
+  color: inherit;
   cursor: pointer;
   border: none;
   background: transparent;
 }
 
 .icon-btn:hover {
-  background: rgba(0, 0, 0, 0.08); /* works on both pink nav and light surfaces */
+  background: rgba(0, 0, 0, 0.08);
 }
-.dark .icon-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+
+/* Select elements: suppress native arrow, add consistent chevron */
+select.input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236D7684' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
 }
 
 /* Form field */
 .input {
   width: 100%;
-  padding-block: 11px;
-  padding-inline: 14px;
+  padding: 11px 14px;
   border-radius: 14px;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -360,6 +372,12 @@ button,
   background: var(--brand-soft);
   color: var(--brand);
   border-color: color-mix(in srgb, var(--brand) 40%, transparent);
+}
+
+} /* end @layer components */
+
+.dark .icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* =====================================================

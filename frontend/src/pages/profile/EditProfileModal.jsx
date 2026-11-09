@@ -159,7 +159,7 @@ const EditProfileModal = ({ open, onClose, profile, onSaved }) => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-primary/30 via-accent/15 to-surface-2" />
+              <div className="w-full h-full bg-gradient-to-br from-primary/40 via-accent/25 to-primary/10" />
             )}
             <label className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 text-xs font-semibold bg-surface border border-line rounded-lg px-2.5 py-1.5 cursor-pointer hover:border-brand/50">
               <Upload size={12} />

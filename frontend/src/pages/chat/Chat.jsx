@@ -425,7 +425,7 @@ const Chat = () => {
 
         {/* ---------- THREAD ---------- */}
         <section
-          className={`flex-col min-h-0 ${
+          className={`flex-col min-h-0 flex-1 ${
             selectedUser ? "flex" : "hidden lg:flex"
           }`}
         >

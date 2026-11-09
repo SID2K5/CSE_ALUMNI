@@ -146,7 +146,7 @@ const ConnectionButton = ({ userId }) => {
     switch (status) {
       case "connected":
         return (
-          <button className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-success text-white">
+          <button className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold bg-success-soft text-success border border-success/20">
             <Check size={16} /> Connected
           </button>
         );
@@ -154,13 +154,13 @@ const ConnectionButton = ({ userId }) => {
       case "pending_sent":
         return (
           <div className="flex gap-2">
-            <button className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-gray-400 text-white cursor-not-allowed">
+            <button className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold bg-surface-2 text-muted border border-line cursor-not-allowed">
               <Clock size={16} /> Pending
             </button>
 
             <button
               onClick={handleCancel}
-              className="px-3 py-2 rounded-lg bg-danger text-white hover:scale-105 transition"
+              className="px-3 py-2 rounded-lg text-sm font-semibold bg-danger-soft text-danger border border-danger/20 hover:bg-danger hover:text-white transition"
             >
               <X size={16} />
             </button>
@@ -172,14 +172,14 @@ const ConnectionButton = ({ userId }) => {
           <div className="flex gap-2">
             <button
               onClick={handleAccept}
-              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-info text-white hover:scale-105 transition"
+              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold bg-brand text-brand-ink transition"
             >
               <Check size={16} /> Accept
             </button>
 
             <button
               onClick={handleReject}
-              className="px-3 py-2 rounded-lg bg-danger text-white hover:scale-105 transition"
+              className="px-3 py-2 rounded-lg text-sm font-semibold bg-danger-soft text-danger border border-danger/20 hover:bg-danger hover:text-white transition"
             >
               <X size={16} />
             </button>
@@ -207,7 +207,7 @@ const ConnectionButton = ({ userId }) => {
 
       {/* 🔥 MUTUAL CONNECTIONS */}
       {mutual > 0 && (
-        <p className="text-xs text-gray-500 flex items-center gap-1 justify-center">
+        <p className="text-xs text-muted flex items-center gap-1 justify-center">
           <Users size={12} /> {mutual} mutual connections
         </p>
       )}

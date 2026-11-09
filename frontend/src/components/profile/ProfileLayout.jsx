@@ -40,7 +40,7 @@ export const ProfileHeader = ({ user, actions }) => {
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary/30 via-accent/15 to-surface-2" />
+          <div className="w-full h-full bg-gradient-to-br from-primary/40 via-accent/25 to-primary/10" />
         )}
       </div>
 
