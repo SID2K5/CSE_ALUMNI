@@ -19,39 +19,92 @@ export default {
         display: ["Sora", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
-        // Semantic tokens — resolve to CSS variables that flip in dark mode.
+        /* ---- Spec tokens (canonical) ---- */
         bg: "var(--bg)",
+        "bg-secondary": "var(--bg-secondary)",
         surface: "var(--surface)",
-        "surface-2": "var(--surface-2)",
-        line: "var(--line)",
+        "surface-elevated": "var(--surface-elevated)",
+        "surface-hover": "var(--surface-hover)",
+        border: "var(--border)",
+        "border-strong": "var(--border-strong)",
+        divider: "var(--divider)",
+
+        text: {
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          muted: "var(--text-muted)",
+        },
+
+        primary: {
+          DEFAULT: "var(--primary)",
+          hover: "var(--primary-hover)",
+          active: "var(--primary-active)",
+          soft: "var(--primary-soft)",
+          contrast: "var(--primary-contrast)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          strong: "var(--accent-strong)",
+          soft: "var(--accent-soft)",
+        },
+
+        success: { DEFAULT: "var(--success)", soft: "var(--success-soft)" },
+        warning: { DEFAULT: "var(--warning)", soft: "var(--warning-soft)" },
+        danger: { DEFAULT: "var(--danger)", soft: "var(--danger-soft)" },
+        info: { DEFAULT: "var(--info)", soft: "var(--info-soft)" },
+        verified: "var(--verified)",
+
+        /* ---- Fixed dark sidebar (same in both themes) ---- */
+        sidebar: {
+          bg: "var(--sidebar-bg)",
+          surface: "var(--sidebar-surface)",
+          hover: "var(--sidebar-hover)",
+          active: "var(--sidebar-active)",
+          border: "var(--sidebar-border)",
+          text: "var(--sidebar-text)",
+          "text-secondary": "var(--sidebar-text-secondary)",
+          icon: "var(--sidebar-icon)",
+          "icon-active": "var(--sidebar-icon-active)",
+        },
+
+        /* ---- Legacy aliases: keep existing component classes working.
+               These resolve to the spec tokens via index.css. ---- */
         ink: "var(--ink)",
         muted: "var(--muted)",
-        "nav-bg": "var(--nav-bg)",
-        "nav-ink": "var(--nav-ink)",
+        line: "var(--line)",
+        "surface-2": "var(--surface-2)",
         brand: {
           DEFAULT: "var(--brand)",
           2: "var(--brand-2)",
           soft: "var(--brand-soft)",
           ink: "var(--brand-ink)",
         },
-        // Kept for backwards compatibility with existing utilities.
-        primary: "#7C3AED",
-        secondary: "#06B6D4",
+        "nav-bg": "var(--nav-bg)",
+        "nav-ink": "var(--nav-ink)",
       },
       borderRadius: {
-        lg: "12px",
+        // Spec scale: 10 input/button · 14 card · 16 featured · 18 modal
+        md: "10px",
+        lg: "14px",
         xl: "16px",
-        "2xl": "20px",
-        "3xl": "26px",
+        "2xl": "18px",
+        "3xl": "22px",
       },
       boxShadow: {
-        card: "0 1px 2px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.06)",
-        "card-hover": "0 2px 6px rgba(15,23,42,0.06), 0 16px 40px rgba(15,23,42,0.10)",
-        ring: "0 0 0 1px var(--line)",
+        card: "var(--shadow-card)",
+        elevated: "var(--shadow-elevated)",
+        ring: "0 0 0 1px var(--border)",
+      },
+      backgroundImage: {
+        "gradient-primary": "var(--gradient-primary)",
+        "gradient-lavender": "var(--gradient-lavender)",
       },
       maxWidth: {
         content: "680px",
         shell: "1280px",
+      },
+      transitionDuration: {
+        DEFAULT: "160ms",
       },
       keyframes: {
         "fade-up": {

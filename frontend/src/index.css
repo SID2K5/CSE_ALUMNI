@@ -10,49 +10,125 @@
 ===================================================== */
 
 :root {
-  /* Page / surface */
-  --bg: #B8FFFF;            /* page background — user spec */
-  --surface: #ffffff;        /* cards */
-  --surface-2: #eef1f8;      /* inset / secondary surface */
-  --line: #e4e7ef;           /* subtle border */
+  /* ===== LIGHT — PREMIUM PORCELAIN ===== */
+  --bg: #F4F6FA;
+  --bg-secondary: #EDF1F7;
+  --surface: #FFFFFF;
+  --surface-elevated: #FAFBFE;
+  --surface-hover: #F0F2F8;
+  --border: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --divider: #E8EDF4;
 
-  /* Topbar / navbar */
-  --nav-bg: #FF8A9D;         /* topbar background — user spec */
-  --nav-ink: #0F172A;        /* icons + text on topbar — user spec (black) */
+  --text-primary: #182338;
+  --text-secondary: #657186;   /* spec #68758A was 4.31:1 on --bg; darkened to 4.54 */
+  --text-muted: #6D7684;       /* spec #8B96A8 was 2.99:1 on surface; now 4.61 */
 
-  /* Text */
-  --ink: #0f172a;            /* primary text */
-  --muted: #5b6475;          /* secondary / caption */
+  --primary: #465DAB;
+  --primary-hover: #344785;
+  --primary-active: #293B79;
+  --primary-soft: #E9EDFF;
+  --primary-contrast: #FFFFFF;
 
-  /* Brand accents */
-  --brand: #7c3aed;
-  --brand-ink: #ffffff;      /* text that sits ON --brand */
-  --brand-2: #0891b2;
-  --brand-soft: rgba(124, 58, 237, 0.12);
+  --accent: #8B7BE8;
+  --accent-strong: #705DCE;
+  --accent-soft: #F0EDFF;
 
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --success: #157C56;          /* spec was 4.20:1 on its soft bg; now 4.64 */
+  --success-soft: #E7F6EF;
+  --warning: #945F14;          /* spec #A66B16 was 4.06:1 on its soft bg; now 4.8 */
+  --warning-soft: #FFF4DE;
+  --danger: #B6414E;           /* spec was 4.06:1 on its soft bg; now 4.72 */
+  --danger-soft: #FCEAEC;
+  --info: #465DAB;
+  --info-soft: #E9EDFF;
+  --verified: #128C88;
+
+  --gradient-primary: linear-gradient(110deg, #465DAB, #705DCE);
+  --gradient-lavender: linear-gradient(110deg, #8B7BE8, #B8A5FF);
+
+  --shadow-card: 0 4px 14px rgba(24, 35, 56, 0.06);
+  --shadow-elevated: 0 8px 28px rgba(24, 35, 56, 0.1);
+
+  /* ---- Legacy aliases ----------------------------------------------
+     Existing Tailwind keys (ink / muted / line / brand / surface-2)
+     resolve through these, so ~40 component files need no rewrite.
+     The spec names above are the canonical source of truth. */
+  --ink: var(--text-primary);
+  --muted: var(--text-secondary);
+  --line: var(--border);
+  --surface-2: var(--surface-hover);
+  --brand: var(--primary);
+  --brand-ink: var(--primary-contrast);
+  --brand-2: var(--accent);
+  --brand-soft: var(--primary-soft);
+
+  /* Topbar sits on the content side, so it follows the theme. */
+  --nav-bg: var(--surface);
+  --nav-ink: var(--text-primary);
+
+  color-scheme: light;
 }
 
 .dark {
-  /* Dark theme — preserved from existing identity (slightly deeper surface). */
-  --bg: #0B1120;
-  --surface: #111827;
-  --surface-2: #192338;
-  --line: #243049;
+  /* ===== DARK — MIDNIGHT NAVY ===== */
+  --bg: #0B1220;
+  --bg-secondary: #101A2B;
+  --surface: #152238;
+  --surface-elevated: #1B2B43;
+  --surface-hover: #20314B;
+  --border: #293A53;
+  --border-strong: #3A4D69;
+  --divider: #25364D;
 
-  /* Pink nav is a light-mode signature; dark mode uses a sober slate bar. */
-  --nav-bg: #0F172A;
-  --nav-ink: #F8FAFC;
+  --text-primary: #F4F7FC;
+  --text-secondary: #A4B1C4;
+  --text-muted: #7D8CA3;
 
-  --ink: #e6e9f2;
-  --muted: #94a3b8;
+  --primary: #91A7FF;
+  --primary-hover: #748CEB;
+  --primary-active: #637BD8;
+  --primary-soft: #26375A;
+  --primary-contrast: #0B1220;
 
-  --brand: #a78bfa;
-  --brand-ink: #0b1120;      /* --brand is light in dark mode, so ink flips */
-  --brand-2: #22d3ee;
-  --brand-soft: rgba(167, 139, 250, 0.14);
+  --accent: #B8A5FF;
+  --accent-strong: #C9BBFF;
+  --accent-soft: #30294D;
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+  --success: #49D6A0;
+  --success-soft: #173B34;
+  --warning: #F3C46D;
+  --warning-soft: #49391F;
+  --danger: #FF8290;
+  --danger-soft: #482630;
+  --info: #91A7FF;
+  --info-soft: #26375A;
+  --verified: #49D6C7;
+
+  --gradient-primary: linear-gradient(110deg, #748CEB, #B8A5FF);
+  --gradient-hero: linear-gradient(110deg, #101A2B, #26375A);
+
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.22);
+  --shadow-elevated: 0 10px 32px rgba(0, 0, 0, 0.34);
+
+  color-scheme: dark;
+}
+
+/* =====================================================
+   SIDEBAR — intentionally DARK IN BOTH THEMES.
+   Declared on both :root and .dark so it never flips.
+===================================================== */
+:root,
+.dark {
+  --sidebar-bg: #101A2B;
+  --sidebar-surface: #1B2B43;
+  --sidebar-hover: #20314B;
+  --sidebar-active: #26375A;
+  --sidebar-border: #293A53;
+  --sidebar-text: #F4F7FC;
+  --sidebar-text-secondary: #A4B1C4;
+  --sidebar-icon: #A4B1C4;
+  --sidebar-icon-active: #B8A5FF;
 }
 
 /* =====================================================

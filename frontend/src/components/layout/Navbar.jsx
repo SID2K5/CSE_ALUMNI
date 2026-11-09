@@ -1,6 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { getNavItems, isActivePath } from "./navItems";
 
+/* =====================================================
+   SIDEBAR
+   Fixed, full-height, and intentionally DARK IN BOTH
+   THEMES (sidebar-* tokens never flip). Desktop only —
+   mobile uses MobileNav.
+===================================================== */
+
 const Navbar = () => {
   const location = useLocation();
 
@@ -15,51 +22,78 @@ const Navbar = () => {
   const items = getNavItems(user?.role);
 
   return (
-    <nav
+    <aside
       className="
-        sticky top-[88px] z-40
-        hidden md:flex flex-col gap-1
-        w-full pl-2 pr-3 py-2
-        max-h-[calc(100vh-104px)]
-        overflow-y-auto
-        scrollbar-hide
+        hidden md:flex flex-col
+        fixed inset-y-0 left-0 z-50
+        w-[260px]
+        bg-sidebar-bg border-r border-sidebar-border
       "
     >
-      {items.map((item) => {
-        const Icon = item.icon;
-        const active = isActivePath(location.pathname, item.path);
+      {/* BRAND */}
+      <div className="h-[72px] flex items-center gap-2.5 px-5 shrink-0">
+        <span className="w-8 h-8 rounded-lg bg-gradient-lavender flex items-center justify-center shrink-0">
+          <span className="font-display font-extrabold text-[15px] text-[#101A2B]">
+            N
+          </span>
+        </span>
+        <span className="font-display font-extrabold text-[19px] tracking-tight text-sidebar-text">
+          NEXUS
+        </span>
+      </div>
 
-        return (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`
-              nav-item group relative flex items-center gap-3
-              px-3.5 py-2.5 rounded-xl text-[15px] font-semibold
-              ${
-                active
-                  ? "bg-brand-soft text-brand"
-                  : "text-muted hover:text-ink hover:bg-surface-2"
-              }
-            `}
-          >
-            {/* Active indicator bar */}
-            <span
-              className={`absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-full bg-brand transition-opacity ${
-                active ? "opacity-100" : "opacity-0"
-              }`}
-            />
+      {/* NAV */}
+      <nav className="flex-1 overflow-y-auto scrollbar-hide px-3 py-2 space-y-0.5">
+        {items.map((item) => {
+          const Icon = item.icon;
+          const active = isActivePath(location.pathname, item.path);
 
-            <Icon
-              size={20}
-              className={active ? "text-brand" : "text-muted group-hover:text-ink"}
-            />
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              aria-current={active ? "page" : undefined}
+              className={`
+                nav-item group relative flex items-center gap-3
+                px-3 py-2.5 rounded-md text-[14.5px] font-medium
+                outline-none
+                focus-visible:ring-2 focus-visible:ring-sidebar-icon-active
+                ${
+                  active
+                    ? "bg-sidebar-active text-sidebar-text font-semibold"
+                    : "text-sidebar-text-secondary hover:bg-sidebar-hover hover:text-sidebar-text"
+                }
+              `}
+            >
+              {/* active rail */}
+              <span
+                className={`absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-sidebar-icon-active transition-opacity ${
+                  active ? "opacity-100" : "opacity-0"
+                }`}
+              />
 
-            <span>{item.name}</span>
-          </Link>
-        );
-      })}
-    </nav>
+              <Icon
+                size={19}
+                className={
+                  active
+                    ? "text-sidebar-icon-active"
+                    : "text-sidebar-icon group-hover:text-sidebar-text"
+                }
+              />
+
+              <span className="truncate">{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* FOOTER */}
+      <div className="shrink-0 px-5 py-4 border-t border-sidebar-border">
+        <p className="text-[11px] text-sidebar-text-secondary/70 leading-relaxed">
+          CSE Student &amp; Alumni Network
+        </p>
+      </div>
+    </aside>
   );
 };
 

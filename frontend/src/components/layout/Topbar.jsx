@@ -112,21 +112,21 @@ const Topbar = () => {
     <>
       <header
         className="
-          fixed top-0 left-0 w-full h-[72px] z-50
-          bg-nav-bg text-nav-ink
+          fixed top-0 right-0 left-0 md:left-[260px] h-[72px] z-40
+          bg-surface/85 backdrop-blur-xl text-ink
           border-b border-line
           flex items-center justify-between gap-3
           px-4 md:px-6
         "
       >
-        {/* ================= LOGO ================= */}
+        {/* ================= LOGO (mobile only — the sidebar carries it on desktop) ================= */}
         <motion.h1
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
           onClick={() => navigate("/feed")}
           className="
-            font-display font-extrabold text-2xl shrink-0
-            text-nav-ink cursor-pointer tracking-tight select-none
+            md:hidden font-display font-extrabold text-xl shrink-0
+            text-ink cursor-pointer tracking-tight select-none
           "
         >
           NEXUS
