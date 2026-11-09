@@ -1,747 +1,356 @@
-import { useState, useEffect } from "react";
-import API from "../../services/api";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Plus, Save, Trash2, Upload, X } from "lucide-react";
 
-import { motion } from "framer-motion";
+import API from "../../services/api";
+import { Avatar, Button, Modal } from "../../components/ui";
 
-import {
-  X,
-  UploadCloud,
-  Camera,
-  Plus,
-  Sparkles,
-  Briefcase,
-  GraduationCap,
-  MapPin,
-  User,
-  Link2,
-} from "lucide-react";
+/* =====================================================
+   EDIT PROFILE — modal form.
+   Preserves PUT /api/users/profile multipart contract:
+     text  : name, bio, education, company, position, location,
+             graduationYear, skills (CSV), portfolioLinks (JSON)
+     files : image (avatar), coverPic, resume
+===================================================== */
 
-const EditProfileModal = ({ close }) => {
-  const [form, setForm] = useState({
-    name: "",
-    bio: "",
-    education: "",
-    company: "",
-    location: "",
-    graduationYear: "",
-  });
+const blank = {
+  name: "",
+  bio: "",
+  education: "",
+  company: "",
+  position: "",
+  location: "",
+  graduationYear: "",
+  skills: "",
+};
 
-  const [skills, setSkills] = useState([]);
-  const [skillInput, setSkillInput] = useState("");
-
-  const [portfolioLinks, setPortfolioLinks] = useState([]);
-  const [linkInput, setLinkInput] = useState({
-    label: "",
-    url: "",
-  });
-
-  const [profileImage, setProfileImage] = useState(null);
-  const [resume, setResume] = useState(null);
-
-  const [preview, setPreview] = useState(null);
-  const [dragActive, setDragActive] = useState(false);
+const EditProfileModal = ({ open, onClose, profile, onSaved }) => {
+  const [form, setForm] = useState(blank);
+  const [links, setLinks] = useState([]);
+  const [files, setFiles] = useState({ image: null, coverPic: null, resume: null });
+  const [previews, setPreviews] = useState({ image: null, coverPic: null });
   const [loading, setLoading] = useState(false);
 
-  // 🔥 FETCH USER
+  /* Seed form whenever the modal opens with a profile */
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const { data } = await API.get("/users/me");
-
-        setForm({
-          name: data.name || "",
-          bio: data.bio || "",
-          education: data.education || "",
-          company: data.company || "",
-          location: data.location || "",
-          graduationYear: data.graduationYear || "",
-        });
-
-        setSkills(data.skills || []);
-        setPreview(data.profilePic);
-
-        setPortfolioLinks(data.portfolioLinks || []);
-
-      } catch (err) {
-        console.log(err);
-      }
-    };
-
-    fetchUser();
-  }, []);
-
-  // 🔥 INPUT CHANGE
-  const handleChange = (key, value) => {
-    setForm((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
-
-  // 🔥 ADD SKILL
-  const handleAddSkill = () => {
-    if (!skillInput.trim()) return;
-
-    if (!skills.includes(skillInput)) {
-      setSkills((prev) => [...prev, skillInput]);
-    }
-
-    setSkillInput("");
-  };
-
-  // 🔥 REMOVE SKILL
-  const removeSkill = (skill) => {
-    setSkills(skills.filter((s) => s !== skill));
-  };
-
-  // 🔥 ADD PORTFOLIO
-  const addLink = () => {
-    if (!linkInput.url) return;
-
-    setPortfolioLinks((prev) => [
-      ...prev,
-      linkInput,
-    ]);
-
-    setLinkInput({
-      label: "",
-      url: "",
+    if (!open || !profile) return;
+    setForm({
+      name: profile.name || "",
+      bio: profile.bio || "",
+      education: profile.education || "",
+      company: profile.company || "",
+      position: profile.position || "",
+      location: profile.location || "",
+      graduationYear: profile.graduationYear || "",
+      skills: Array.isArray(profile.skills) ? profile.skills.join(", ") : "",
     });
-  };
-
-  // 🔥 REMOVE PORTFOLIO
-  const removeLink = (index) => {
-    setPortfolioLinks(
-      portfolioLinks.filter((_, i) => i !== index)
+    setLinks(
+      Array.isArray(profile.portfolioLinks) && profile.portfolioLinks.length
+        ? profile.portfolioLinks.map((l) => ({
+            label: l.label || "",
+            url: l.url || "",
+          }))
+        : []
     );
+    setFiles({ image: null, coverPic: null, resume: null });
+    setPreviews({ image: null, coverPic: null });
+  }, [open, profile]);
+
+  const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+
+  const pickFile = (key, accept) => (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (accept === "image" && !f.type.startsWith("image/")) {
+      return toast.error("Please choose an image file");
+    }
+    if (f.size > 5 * 1024 * 1024) {
+      return toast.error("File must be under 5 MB");
+    }
+    setFiles((p) => ({ ...p, [key]: f }));
+    if (accept === "image") {
+      setPreviews((p) => {
+        if (p[key]) URL.revokeObjectURL(p[key]);
+        return { ...p, [key]: URL.createObjectURL(f) };
+      });
+    }
   };
 
-  // 🔥 RESUME DROP
-  const handleDrop = (e) => {
-    e.preventDefault();
+  const addLink = () => setLinks((p) => [...p, { label: "", url: "" }]);
+  const updateLink = (i, k, v) =>
+    setLinks((p) => p.map((l, idx) => (idx === i ? { ...l, [k]: v } : l)));
+  const removeLink = (i) => setLinks((p) => p.filter((_, idx) => idx !== i));
 
-    setDragActive(false);
+  const handleSubmit = async (e) => {
+    e?.preventDefault?.();
+    if (!form.name.trim()) return toast.error("Name is required");
 
-    setResume(e.dataTransfer.files[0]);
-  };
+    const fd = new FormData();
+    fd.append("name", form.name.trim());
+    fd.append("bio", form.bio);
+    fd.append("education", form.education);
+    fd.append("company", form.company);
+    fd.append("position", form.position);
+    fd.append("location", form.location);
+    if (form.graduationYear !== "") {
+      fd.append("graduationYear", form.graduationYear);
+    }
+    fd.append("skills", form.skills);
 
-  // 🔥 SUBMIT
-  const handleSubmit = async () => {
+    const cleanLinks = links.filter((l) => l.url.trim());
+    fd.append("portfolioLinks", JSON.stringify(cleanLinks));
+
+    if (files.image) fd.append("image", files.image);
+    if (files.coverPic) fd.append("coverPic", files.coverPic);
+    if (files.resume) fd.append("resume", files.resume);
+
     try {
       setLoading(true);
-
-      const data = new FormData();
-
-      Object.keys(form).forEach((k) =>
-        data.append(k, form[k])
-      );
-
-      data.append(
-        "skills",
-        JSON.stringify(skills)
-      );
-
-      data.append(
-        "portfolioLinks",
-        JSON.stringify(portfolioLinks)
-      );
-
-      if (profileImage)
-        data.append("image", profileImage);
-
-      if (resume)
-        data.append("resume", resume);
-
-      await API.put("/users/profile", data);
-
-      toast.success("Profile updated 🚀");
-
-      close();
-
-      window.location.reload();
-
+      const { data } = await API.put("/users/profile", fd);
+      onSaved?.(data);
     } catch (err) {
-      console.log(err);
-
-      toast.error("Update failed");
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Could not save profile");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleClose = () => {
+    if (loading) return;
+    Object.values(previews).forEach((u) => u && URL.revokeObjectURL(u));
+    onClose?.();
+  };
+
+  const avatarPreviewUser = previews.image
+    ? { name: form.name, profilePic: previews.image }
+    : profile;
+
   return (
-    <div
-      className="fixed inset-0 z-50
-      bg-black/70 backdrop-blur-xl
-      flex items-center justify-center
-      p-4"
-    >
-
-      {/* MODAL */}
-      <motion.div
-        initial={{
-          opacity: 0,
-          scale: 0.9,
-          y: 40,
-        }}
-        animate={{
-          opacity: 1,
-          scale: 1,
-          y: 0,
-        }}
-        transition={{
-          duration: 0.3,
-        }}
-        className="w-full max-w-4xl
-        rounded-[32px]
-        overflow-hidden
-        border border-white/10
-        shadow-[0_0_80px_rgba(139,92,246,0.18)]"
-      >
-
-        {/* BACKGROUND */}
-        <div
-          className="relative
-          bg-gradient-to-br
-          from-[#07111f]
-          via-[#0f172a]
-          to-[#020617]
-          p-8 md:p-10
-          max-h-[92vh]
-          overflow-y-auto"
-        >
-
-          {/* GLOW */}
-          <div
-            className="absolute top-0 left-0
-            w-72 h-72 rounded-full
-            bg-purple-500/10 blur-3xl"
-          />
-
-          {/* HEADER */}
-          <div className="relative flex items-center justify-between mb-10">
-
-            <div>
-
-              <h2 className="text-4xl font-bold text-white">
-                Edit Profile
-              </h2>
-
-              <p className="text-gray-400 mt-2">
-                Customize your futuristic profile 🚀
-              </p>
-
-            </div>
-
-            <button
-              onClick={close}
-              className="w-12 h-12 rounded-2xl
-              bg-white/5 border border-white/10
-              flex items-center justify-center
-              hover:bg-red-500/20 transition"
-            >
-              <X className="text-white" />
-            </button>
-
-          </div>
-
-          {/* PROFILE SECTION */}
-          <div className="relative flex flex-col md:flex-row items-center gap-8 mb-10">
-
-            {/* PROFILE IMAGE */}
-            <div
-              className="relative group cursor-pointer"
-              onClick={() =>
-                document
-                  .getElementById("profileUpload")
-                  .click()
-              }
-            >
-
-              {/* GLOW */}
-              <div
-                className="absolute inset-0 rounded-full
-                blur-2xl bg-cyan-400/30"
-              />
-
-              <img
-                src={
-                  preview ||
-                  "https://via.placeholder.com/120"
-                }
-                className="relative w-32 h-32 rounded-full
-                object-cover border-[5px]
-                border-white shadow-2xl"
-              />
-
-              {/* OVERLAY */}
-              <div
-                className="absolute inset-0 rounded-full
-                bg-black/50 opacity-0
-                group-hover:opacity-100
-                flex items-center justify-center
-                transition"
-              >
-                <Camera className="text-white" />
-              </div>
-
-            </div>
-
-            {/* INPUT */}
-            <input
-              id="profileUpload"
-              type="file"
-              hidden
-              onChange={(e) => {
-                setProfileImage(
-                  e.target.files[0]
-                );
-
-                setPreview(
-                  URL.createObjectURL(
-                    e.target.files[0]
-                  )
-                );
-              }}
-            />
-
-            {/* INFO */}
-            <div className="space-y-3">
-
-              <h3 className="text-2xl font-semibold text-white">
-                Profile Photo
-              </h3>
-
-              <p className="text-gray-400">
-                Upload a professional and clean photo
-              </p>
-
-              <button
-                onClick={() =>
-                  document
-                    .getElementById("profileUpload")
-                    .click()
-                }
-                className="px-5 py-3 rounded-2xl
-                bg-gradient-to-r
-                from-purple-500 to-cyan-400
-                text-white font-medium
-                hover:scale-105 transition"
-              >
-                Change Photo
-              </button>
-
-            </div>
-
-          </div>
-
-          {/* FORM GRID */}
-          <div className="grid md:grid-cols-2 gap-5">
-
-            {[
-              {
-                key: "name",
-                icon: <User size={18} />,
-                placeholder: "Full Name",
-              },
-              {
-                key: "education",
-                icon: <GraduationCap size={18} />,
-                placeholder: "Education",
-              },
-              {
-                key: "company",
-                icon: <Briefcase size={18} />,
-                placeholder: "Company",
-              },
-              {
-                key: "location",
-                icon: <MapPin size={18} />,
-                placeholder: "Location",
-              },
-            ].map((item) => (
-              <div
-                key={item.key}
-                className="relative"
-              >
-
-                <div
-                  className="absolute left-4 top-1/2
-                  -translate-y-1/2 text-gray-400"
-                >
-                  {item.icon}
-                </div>
-
-                <input
-                  value={form[item.key]}
-                  placeholder={item.placeholder}
-                  onChange={(e) =>
-                    handleChange(
-                      item.key,
-                      e.target.value
-                    )
-                  }
-                  className="w-full pl-12 pr-4 py-4
-                  rounded-2xl
-                  bg-white/5 border border-white/10
-                  text-white
-                  placeholder:text-gray-500
-                  focus:border-cyan-400
-                  focus:ring-2 focus:ring-cyan-400/20
-                  outline-none transition"
-                />
-
-              </div>
-            ))}
-
-            {/* PASSOUT */}
-            <div className="relative">
-
-  <select
-    value={form.graduationYear}
-    onChange={(e) =>
-      handleChange(
-        "graduationYear",
-        e.target.value
-      )
-    }
-    className="
-    w-full px-5 py-4
-    rounded-2xl
-    bg-[#111827]
-    border border-white/10
-    text-white
-    appearance-none
-    focus:border-cyan-400
-    focus:ring-2 focus:ring-cyan-400/20
-    outline-none
-    transition
-    cursor-pointer
-    shadow-lg
-    "
-  >
-
-    <option
-      value=""
-      className="bg-[#111827] text-gray-300"
-    >
-      Passout Year
-    </option>
-
-    {Array.from(
-      { length: 15 },
-      (_, i) => (
-        <option
-          key={i}
-          value={2032 - i}
-          className="bg-[#111827] text-white"
-        >
-          {2032 - i}
-        </option>
-      )
-    )}
-
-  </select>
-
-  {/* CUSTOM ARROW */}
-  <div
-    className="absolute right-5 top-1/2
-    -translate-y-1/2
-    pointer-events-none
-    text-gray-400"
-  >
-    ▼
-  </div>
-
-</div>
-
-          </div>
-
-          {/* BIO */}
-          <div className="mt-6">
-
-            <textarea
-              value={form.bio}
-              placeholder="Tell people about yourself..."
-              onChange={(e) =>
-                handleChange(
-                  "bio",
-                  e.target.value
-                )
-              }
-              className="w-full min-h-[140px]
-              p-5 rounded-3xl
-              bg-white/5 border border-white/10
-              text-white placeholder:text-gray-500
-              focus:border-purple-400
-              focus:ring-2 focus:ring-purple-400/20
-              outline-none transition"
-            />
-
-          </div>
-
-          {/* SKILLS */}
-          <div className="mt-8">
-
-            <div className="flex items-center gap-2 mb-4">
-
-              <Sparkles className="text-purple-400" />
-
-              <h3 className="text-xl font-semibold text-white">
-                Skills
-              </h3>
-
-            </div>
-
-            {/* INPUT */}
-            <div className="flex gap-3">
-
-              <input
-                value={skillInput}
-                onChange={(e) =>
-                  setSkillInput(
-                    e.target.value
-                  )
-                }
-                placeholder="Add a skill..."
-                className="flex-1 px-5 py-4 rounded-2xl
-                bg-white/5 border border-white/10
-                text-white outline-none"
-              />
-
-              <button
-                onClick={handleAddSkill}
-                className="px-5 rounded-2xl
-                bg-gradient-to-r
-                from-purple-500 to-cyan-400
-                text-white hover:scale-105
-                transition"
-              >
-                <Plus />
-              </button>
-
-            </div>
-
-            {/* SKILL TAGS */}
-            <div className="flex flex-wrap gap-3 mt-5">
-
-              {skills.map((s, i) => (
-                <motion.div
-                  key={i}
-                  whileHover={{ scale: 1.05 }}
-                  onClick={() =>
-                    removeSkill(s)
-                  }
-                  className="px-5 py-2 rounded-2xl
-                  bg-gradient-to-r
-                  from-purple-500/20
-                  to-cyan-400/20
-                  border border-white/10
-                  text-white cursor-pointer"
-                >
-                  {s} ✕
-                </motion.div>
-              ))}
-
-            </div>
-
-          </div>
-
-          {/* PORTFOLIO */}
-          <div className="mt-8">
-
-            <div className="flex items-center gap-2 mb-4">
-
-              <Link2 className="text-cyan-400" />
-
-              <h3 className="text-xl font-semibold text-white">
-                Portfolio Links
-              </h3>
-
-            </div>
-
-            {/* INPUTS */}
-            <div className="grid md:grid-cols-3 gap-3">
-
-              <input
-                placeholder="Label"
-                value={linkInput.label}
-                onChange={(e) =>
-                  setLinkInput({
-                    ...linkInput,
-                    label:
-                      e.target.value,
-                  })
-                }
-                className="px-5 py-4 rounded-2xl
-                bg-white/5 border border-white/10
-                text-white outline-none"
-              />
-
-              <input
-                placeholder="https://..."
-                value={linkInput.url}
-                onChange={(e) =>
-                  setLinkInput({
-                    ...linkInput,
-                    url:
-                      e.target.value,
-                  })
-                }
-                className="px-5 py-4 rounded-2xl
-                bg-white/5 border border-white/10
-                text-white outline-none"
-              />
-
-              <button
-                onClick={addLink}
-                className="rounded-2xl
-                bg-gradient-to-r
-                from-purple-500 to-cyan-400
-                text-white hover:scale-105
-                transition"
-              >
-                Add Link
-              </button>
-
-            </div>
-
-            {/* LINKS */}
-            <div className="space-y-3 mt-5">
-
-              {portfolioLinks.map((l, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between
-                  p-4 rounded-2xl
-                  bg-white/5 border border-white/10"
-                >
-
-                  <div>
-                    <p className="text-white font-medium">
-                      {l.label || "Portfolio"}
-                    </p>
-
-                    <p className="text-sm text-gray-400">
-                      {l.url}
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() =>
-                      removeLink(i)
-                    }
-                    className="text-red-400 hover:text-red-500"
-                  >
-                    ✕
-                  </button>
-
-                </div>
-              ))}
-
-            </div>
-
-          </div>
-
-          {/* RESUME */}
-          <div className="mt-8">
-
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragActive(true);
-              }}
-              onDragLeave={() =>
-                setDragActive(false)
-              }
-              onDrop={handleDrop}
-              onClick={() =>
-                document
-                  .getElementById(
-                    "resumeUpload"
-                  )
-                  .click()
-              }
-              className={`p-8 rounded-[28px]
-              border-2 border-dashed
-              cursor-pointer transition
-              ${
-                dragActive
-                  ? "border-cyan-400 bg-cyan-400/10"
-                  : "border-white/10 bg-white/5"
-              }`}
-            >
-
-              <div className="flex flex-col items-center gap-4">
-
-                <UploadCloud className="text-cyan-400" />
-
-                <div className="text-center">
-
-                  <p className="text-white font-medium">
-                    {resume
-                      ? resume.name
-                      : "Upload Resume"}
-                  </p>
-
-                  <p className="text-gray-400 text-sm mt-1">
-                    Drag & drop or click to upload
-                  </p>
-
-                </div>
-
-              </div>
-
-              <input
-                id="resumeUpload"
-                type="file"
-                hidden
-                onChange={(e) =>
-                  setResume(
-                    e.target.files[0]
-                  )
-                }
-              />
-
-            </div>
-
-          </div>
-
-          {/* ACTIONS */}
-          <div className="flex gap-4 mt-10">
-
-            <button
-              disabled={loading}
-              onClick={handleSubmit}
-              className="flex-1 py-4 rounded-2xl
-              bg-gradient-to-r
-              from-purple-500 to-cyan-400
-              text-white font-semibold
-              hover:scale-[1.02]
-              transition shadow-xl"
-            >
-              {loading
-                ? "Saving..."
-                : "Save Changes"}
-            </button>
-
-            <button
-              onClick={close}
-              className="flex-1 py-4 rounded-2xl
-              bg-white/5 border border-white/10
-              text-white hover:bg-white/10
-              transition"
-            >
-              Cancel
-            </button>
-
-          </div>
-
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="Edit profile"
+      size="lg"
+      footer={
+        <div className="flex gap-2 justify-end">
+          <Button variant="ghost" onClick={handleClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            loading={loading}
+            iconLeft={Save}
+          >
+            Save changes
+          </Button>
         </div>
-      </motion.div>
-    </div>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* COVER + AVATAR */}
+        <div>
+          <div className="relative h-28 rounded-xl overflow-hidden bg-surface-2 border border-line">
+            {previews.coverPic || profile?.coverPic ? (
+              <img
+                src={previews.coverPic || profile.coverPic}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-brand/20 via-brand-2/10 to-transparent" />
+            )}
+            <label className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 text-xs font-semibold bg-surface border border-line rounded-lg px-2.5 py-1.5 cursor-pointer hover:border-brand/50">
+              <Upload size={12} />
+              Cover
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={pickFile("coverPic", "image")}
+              />
+            </label>
+          </div>
+
+          <div className="flex items-center gap-3 -mt-7 ml-4 relative">
+            <div className="ring-4 ring-surface rounded-full">
+              <Avatar user={avatarPreviewUser} size={64} />
+            </div>
+            <label className="inline-flex items-center gap-1.5 text-xs font-semibold bg-surface border border-line rounded-lg px-2.5 py-1.5 cursor-pointer hover:border-brand/50 mt-7">
+              <Upload size={12} />
+              Photo
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={pickFile("image", "image")}
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* BASICS */}
+        <div>
+          <Label>Name *</Label>
+          <input className="input" value={form.name} onChange={set("name")} />
+        </div>
+
+        <div>
+          <Label>Bio</Label>
+          <textarea
+            className="input"
+            rows={3}
+            value={form.bio}
+            onChange={set("bio")}
+            placeholder="A short introduction"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <Label>Position / role</Label>
+            <input
+              className="input"
+              value={form.position}
+              onChange={set("position")}
+              placeholder="e.g. Software Engineer"
+            />
+          </div>
+          <div>
+            <Label>Company</Label>
+            <input
+              className="input"
+              value={form.company}
+              onChange={set("company")}
+              placeholder="e.g. Google"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <Label>Location</Label>
+            <input
+              className="input"
+              value={form.location}
+              onChange={set("location")}
+              placeholder="e.g. Bangalore"
+            />
+          </div>
+          <div>
+            <Label>Graduation year</Label>
+            <input
+              className="input"
+              type="number"
+              min="1950"
+              max="2100"
+              value={form.graduationYear}
+              onChange={set("graduationYear")}
+              placeholder="e.g. 2024"
+            />
+            <p className="text-xs text-muted mt-1">
+              Setting this marks your account as alumni.
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <Label>Education</Label>
+          <input
+            className="input"
+            value={form.education}
+            onChange={set("education")}
+            placeholder="e.g. B.Tech CSE, 2020–2024"
+          />
+        </div>
+
+        <div>
+          <Label>Skills</Label>
+          <input
+            className="input"
+            value={form.skills}
+            onChange={set("skills")}
+            placeholder="Comma-separated, e.g. React, Node.js, SQL"
+          />
+        </div>
+
+        {/* RESUME */}
+        <div>
+          <Label>Resume</Label>
+          <label className="flex items-center gap-3 border border-dashed border-line rounded-xl px-4 py-3 cursor-pointer hover:border-brand/60 bg-surface-2">
+            <Upload size={16} className="text-muted shrink-0" />
+            <span className="text-sm text-ink truncate flex-1">
+              {files.resume
+                ? files.resume.name
+                : profile?.resume
+                ? "Replace current resume"
+                : "Upload a PDF resume"}
+            </span>
+            <input
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={pickFile("resume")}
+            />
+          </label>
+        </div>
+
+        {/* PORTFOLIO LINKS */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <Label>Links</Label>
+            <button
+              type="button"
+              onClick={addLink}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
+            >
+              <Plus size={13} />
+              Add link
+            </button>
+          </div>
+          {links.length === 0 ? (
+            <p className="text-xs text-muted">
+              Add a GitHub, LinkedIn or portfolio link.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {links.map((l, i) => (
+                <div key={i} className="flex gap-2">
+                  <input
+                    className="input flex-[0_0_32%]"
+                    value={l.label}
+                    onChange={(e) => updateLink(i, "label", e.target.value)}
+                    placeholder="Label"
+                  />
+                  <input
+                    className="input flex-1"
+                    value={l.url}
+                    onChange={(e) => updateLink(i, "url", e.target.value)}
+                    placeholder="https://…"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeLink(i)}
+                    className="icon-btn !w-10 !h-10 border border-line text-red-500 shrink-0"
+                    aria-label="Remove link"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </form>
+    </Modal>
   );
 };
+
+const Label = ({ children }) => (
+  <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+    {children}
+  </label>
+);
 
 export default EditProfileModal;
