@@ -319,7 +319,8 @@ button,
 /* Form field */
 .input {
   width: 100%;
-  padding: 11px 14px;
+  padding-block: 11px;
+  padding-inline: 14px;
   border-radius: 14px;
   background: var(--surface);
   border: 1px solid var(--line);
