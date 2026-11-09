@@ -137,7 +137,7 @@ const JobCard = ({
                 e.stopPropagation();
                 onDelete?.();
               }}
-              className="icon-btn !w-8 !h-8 border border-line text-red-500 hover:text-red-600"
+              className="icon-btn !w-8 !h-8 border border-line text-danger hover:text-danger"
               aria-label="Delete"
               title="Delete"
             >

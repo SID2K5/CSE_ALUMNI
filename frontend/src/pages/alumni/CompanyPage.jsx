@@ -183,7 +183,7 @@ const CompanyAlumniCard = ({ user: u, online, onOpen }) => (
       <div className="relative cursor-pointer shrink-0" onClick={onOpen}>
         <Avatar user={u} size={48} />
         {online && (
-          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-surface" />
+          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-success ring-2 ring-surface" />
         )}
       </div>
       <div className="min-w-0 flex-1">
@@ -193,7 +193,7 @@ const CompanyAlumniCard = ({ user: u, online, onOpen }) => (
         >
           <h3 className="font-semibold text-ink truncate">{u.name}</h3>
           {(u.verifiedBadge || u.isVerified) && (
-            <ShieldCheck size={14} className="text-brand shrink-0" />
+            <ShieldCheck size={14} className="text-verified shrink-0" aria-label="Verified" />
           )}
         </div>
         <p className="text-xs text-muted mt-0.5">

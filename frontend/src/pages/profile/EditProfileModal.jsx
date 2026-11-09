@@ -332,7 +332,7 @@ const EditProfileModal = ({ open, onClose, profile, onSaved }) => {
                   <button
                     type="button"
                     onClick={() => removeLink(i)}
-                    className="icon-btn !w-10 !h-10 border border-line text-red-500 shrink-0"
+                    className="icon-btn !w-10 !h-10 border border-line text-danger shrink-0"
                     aria-label="Remove link"
                   >
                     <Trash2 size={14} />

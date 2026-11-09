@@ -267,7 +267,7 @@ const Topbar = () => {
             <button onClick={() => setShowNotif(!showNotif)} className="icon-btn relative" aria-label="Notifications">
               <Bell size={20} />
               {unread > 0 && (
-                <span className="absolute top-1 right-1 min-w-[17px] h-[17px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] rounded-full font-bold">
+                <span className="absolute top-1 right-1 min-w-[17px] h-[17px] px-1 flex items-center justify-center bg-danger text-white text-[10px] rounded-full font-bold">
                   {unread > 9 ? "9+" : unread}
                 </span>
               )}
@@ -282,7 +282,7 @@ const Topbar = () => {
           {/* THEME */}
           <button onClick={toggleTheme} className="icon-btn" aria-label="Toggle theme">
             {theme === "dark" ? (
-              <Sun size={20} className="text-amber-400" />
+              <Sun size={20} className="text-warning" />
             ) : (
               <Moon size={20} />
             )}
@@ -330,7 +330,7 @@ const Topbar = () => {
                       logout();
                       navigate("/login");
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-red-500/10 text-red-500 text-sm font-medium"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-danger-soft text-danger text-sm font-medium"
                   >
                     <LogOut size={16} />
                     Logout

@@ -24,7 +24,7 @@ const variantMap = {
   secondary:
     "bg-surface text-ink border border-line hover:bg-surface-2 transition-colors",
   danger:
-    "bg-red-600 text-white hover:bg-red-700 transition-colors",
+    "bg-danger text-white hover:brightness-95 transition-[filter,background-color]",
 };
 
 const Button = ({

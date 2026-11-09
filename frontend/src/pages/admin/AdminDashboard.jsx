@@ -551,7 +551,7 @@ export const UsersPanel = ({ onChanged }) => {
                     <button
                       onClick={() => reject(u)}
                       disabled={busyId === u._id}
-                      className="icon-btn !w-8 !h-8 border border-line text-red-500 hover:text-red-600"
+                      className="icon-btn !w-8 !h-8 border border-line text-danger hover:text-danger"
                       aria-label="Reject"
                       title="Reject"
                     >
@@ -661,7 +661,7 @@ export const EventsPanel = ({ onChanged }) => {
             <button
               onClick={() => act(ev, false)}
               disabled={busyId === ev._id}
-              className="icon-btn !w-8 !h-8 border border-line text-red-500 hover:text-red-600"
+              className="icon-btn !w-8 !h-8 border border-line text-danger hover:text-danger"
               aria-label="Reject"
               title="Reject"
             >
@@ -758,7 +758,7 @@ export const JobsPanel = ({ onChanged }) => {
             <button
               onClick={() => act(job, false)}
               disabled={busyId === job._id}
-              className="icon-btn !w-8 !h-8 border border-line text-red-500 hover:text-red-600"
+              className="icon-btn !w-8 !h-8 border border-line text-danger hover:text-danger"
               aria-label="Reject"
               title="Reject"
             >

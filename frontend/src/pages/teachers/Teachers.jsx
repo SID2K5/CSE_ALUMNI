@@ -259,7 +259,7 @@ const TeacherCard = ({ teacher: t, isAdmin, onOpen, onDelete }) => (
         <div className="flex items-center gap-1.5">
           <h3 className="font-semibold text-ink truncate">{t.name}</h3>
           {t.teacherVerified && (
-            <ShieldCheck size={14} className="text-brand shrink-0" />
+            <ShieldCheck size={14} className="text-verified shrink-0" aria-label="Verified" />
           )}
         </div>
         {t.designation && (
@@ -272,7 +272,7 @@ const TeacherCard = ({ teacher: t, isAdmin, onOpen, onDelete }) => (
             e.stopPropagation();
             onDelete();
           }}
-          className="icon-btn !w-8 !h-8 border border-line text-red-500 hover:text-red-600 shrink-0"
+          className="icon-btn !w-8 !h-8 border border-line text-danger hover:text-danger shrink-0"
           aria-label="Remove"
           title="Remove"
         >

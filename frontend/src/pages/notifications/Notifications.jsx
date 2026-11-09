@@ -26,29 +26,29 @@ import { Avatar, Button, EmptyState, Skeleton } from "../../components/ui";
 ===================================================== */
 
 const TYPE_META = {
-  like: { icon: Heart, tint: "text-rose-500", bg: "bg-rose-500/10", label: "Likes" },
+  like: { icon: Heart, tint: "text-danger", bg: "bg-danger-soft", label: "Likes" },
   comment: {
     icon: MessageSquare,
-    tint: "text-cyan-500",
-    bg: "bg-cyan-500/10",
+    tint: "text-info",
+    bg: "bg-info-soft",
     label: "Comments",
   },
   connection: {
     icon: UserPlus,
-    tint: "text-violet-500",
-    bg: "bg-violet-500/10",
+    tint: "text-accent-strong dark:text-accent",
+    bg: "bg-accent-soft",
     label: "Connections",
   },
   connection_request: {
     icon: UserPlus,
-    tint: "text-violet-500",
-    bg: "bg-violet-500/10",
+    tint: "text-accent-strong dark:text-accent",
+    bg: "bg-accent-soft",
     label: "Connections",
   },
   connection_accepted: {
     icon: UserCheck,
-    tint: "text-emerald-500",
-    bg: "bg-emerald-500/10",
+    tint: "text-success",
+    bg: "bg-success-soft",
     label: "Connections",
   },
   system: { icon: Info, tint: "text-muted", bg: "bg-surface-2", label: "System" },
@@ -294,7 +294,7 @@ const Notifications = () => {
                       e.stopPropagation();
                       remove(n);
                     }}
-                    className="icon-btn !w-8 !h-8 text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="icon-btn !w-8 !h-8 text-muted hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-label="Delete notification"
                     title="Delete"
                   >

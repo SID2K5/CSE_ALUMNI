@@ -146,7 +146,7 @@ const ConnectionButton = ({ userId }) => {
     switch (status) {
       case "connected":
         return (
-          <button className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-green-500 text-white">
+          <button className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-success text-white">
             <Check size={16} /> Connected
           </button>
         );
@@ -160,7 +160,7 @@ const ConnectionButton = ({ userId }) => {
 
             <button
               onClick={handleCancel}
-              className="px-3 py-2 rounded-lg bg-red-500 text-white hover:scale-105 transition"
+              className="px-3 py-2 rounded-lg bg-danger text-white hover:scale-105 transition"
             >
               <X size={16} />
             </button>
@@ -172,14 +172,14 @@ const ConnectionButton = ({ userId }) => {
           <div className="flex gap-2">
             <button
               onClick={handleAccept}
-              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-blue-500 text-white hover:scale-105 transition"
+              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-info text-white hover:scale-105 transition"
             >
               <Check size={16} /> Accept
             </button>
 
             <button
               onClick={handleReject}
-              className="px-3 py-2 rounded-lg bg-red-500 text-white hover:scale-105 transition"
+              className="px-3 py-2 rounded-lg bg-danger text-white hover:scale-105 transition"
             >
               <X size={16} />
             </button>

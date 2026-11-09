@@ -59,7 +59,7 @@ export const ProfileHeader = ({ user, actions }) => {
                 {verified && (
                   <ShieldCheck
                     size={17}
-                    className="text-brand shrink-0"
+                    className="text-verified shrink-0"
                     aria-label="Verified"
                   />
                 )}

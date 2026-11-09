@@ -387,7 +387,7 @@ const Chat = () => {
                         <div className="relative shrink-0">
                           <Avatar user={c.user} size={40} />
                           {c.user.isOnline && (
-                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-surface" />
+                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-success ring-2 ring-surface" />
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -449,7 +449,7 @@ const Chat = () => {
                 <div className="relative shrink-0">
                   <Avatar user={selectedUser} size={38} />
                   {selectedUser.isOnline && (
-                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-surface" />
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-success ring-2 ring-surface" />
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -584,7 +584,7 @@ const MessageBubble = ({ m, mine, onDelete }) => {
         {mine && !deleted && (
           <button
             onClick={onDelete}
-            className="icon-btn !w-7 !h-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-red-500 shrink-0"
+            className="icon-btn !w-7 !h-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-danger shrink-0"
             aria-label="Delete message"
             title="Delete"
           >

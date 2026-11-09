@@ -42,7 +42,7 @@ const Pending = () => {
                 <span
                   className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
                     s.done
-                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                      ? "bg-success/15 text-success"
                       : s.active
                       ? "bg-brand-soft text-brand"
                       : "bg-surface-2 text-muted"
