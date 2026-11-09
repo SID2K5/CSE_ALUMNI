@@ -1,184 +1,146 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { Eye, EyeOff, LogIn } from "lucide-react";
+
 import API from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
-import { motion } from "framer-motion";
+import AuthShell from "../../components/auth/AuthShell";
+import { Button } from "../../components/ui";
+
+/* =====================================================
+   LOGIN — POST /api/auth/login
+   Backend returns 403 "Account pending admin approval"
+   until an admin approves; we route those users to /pending.
+   JWT handling is unchanged (AuthContext.login stores it).
+===================================================== */
 
 const Login = () => {
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-  });
-
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setLoading(true);
-
     try {
-      const res = await API.post("/auth/login", form);
+      const { data } = await API.post("/auth/login", form);
 
-      console.log("LOGIN RESPONSE:", res.data);
-
-      const userData = res.data;
-
-      // Safety check
-      if (!userData?.token) {
-        toast.error("Login failed: Token missing");
-        setLoading(false);
+      if (!data?.token) {
+        toast.error("Login failed — no session token returned");
         return;
       }
 
-      login(userData);
-
-      toast.success("Welcome back 🚀");
-
+      login(data);
+      toast.success(`Welcome back, ${data.name?.split(" ")[0] || "there"}`);
       navigate("/feed");
-
     } catch (err) {
-      const message =
-        err.response?.data?.message || "Login failed";
-
+      const message = err?.response?.data?.message || "Login failed";
       if (message === "Account pending admin approval") {
         navigate("/pending");
       } else {
         toast.error(message);
       }
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden px-4">
-
-      {/* FALLBACK GRADIENT (shows if the video is unavailable) */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#1e1b4b] via-[#0b1120] to-[#083344]"></div>
-
-      {/* 🎥 BACKGROUND VIDEO */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-      >
-        <source src="/videos/login.mp4" type="video/mp4" />
-      </video>
-
-      {/* 🌑 DARK OVERLAY */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
-
-      {/* ✨ OPTIONAL GLOW */}
-      <div className="absolute w-[500px] h-[500px] bg-purple-500/20 blur-3xl rounded-full top-[-100px] left-[-100px]"></div>
-
-      {/* LOGIN CARD */}
-      <motion.form
-        onSubmit={handleSubmit}
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-full max-w-md backdrop-blur-2xl bg-slate-950/55 p-8 rounded-3xl shadow-2xl border border-white/15 space-y-5"
-      >
-
-        {/* TITLE */}
-        <div className="text-center space-y-2">
-
-          <p className="text-cyan-300 font-semibold tracking-[0.2em] text-xs uppercase">
-            NEXUS
-          </p>
-
-          <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Welcome back
-          </h2>
-
-          <p className="text-gray-300 text-sm">
-            Connect. Collaborate. Grow.
-          </p>
-
-        </div>
-
-        {/* EMAIL */}
-        <div className="space-y-1">
-
+    <AuthShell
+      title="Welcome back"
+      subtitle="Sign in to your NEXUS account."
+      footer={
+        <p className="text-sm text-muted text-center">
+          Don&apos;t have an account?{" "}
+          <Link
+            to="/register"
+            className="font-semibold text-brand hover:underline"
+          >
+            Create one
+          </Link>
+        </p>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label htmlFor="email">Email</Label>
           <input
+            id="email"
             type="email"
             required
-            placeholder="Enter your email"
+            autoComplete="email"
             value={form.email}
-            className="w-full p-3 rounded-xl bg-white/20 border border-white/20 text-white placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            onChange={(e) =>
-              setForm({
-                ...form,
-                email: e.target.value,
-              })
-            }
+            onChange={set("email")}
+            placeholder="you@college.edu"
+            className="input"
           />
-
         </div>
 
-        {/* PASSWORD */}
-        <div className="space-y-1">
-
-          <input
-            type="password"
-            required
-            placeholder="Enter your password"
-            value={form.password}
-            className="w-full p-3 rounded-xl bg-white/20 border border-white/20 text-white placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-            onChange={(e) =>
-              setForm({
-                ...form,
-                password: e.target.value,
-              })
-            }
-          />
-
+        <div>
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <input
+              id="password"
+              type={showPw ? "text" : "password"}
+              required
+              autoComplete="current-password"
+              value={form.password}
+              onChange={set("password")}
+              placeholder="••••••••"
+              className="input pr-11"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw((s) => !s)}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 icon-btn !w-8 !h-8 text-muted"
+              aria-label={showPw ? "Hide password" : "Show password"}
+            >
+              {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </div>
 
-        {/* LOGIN BUTTON */}
-        <button
-          disabled={loading}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-400 text-white font-semibold hover:scale-105 transition-all duration-300 shadow-lg"
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          loading={loading}
+          iconLeft={LogIn}
         >
-          {loading ? "Logging in..." : "Login"}
-        </button>
+          Sign in
+        </Button>
+      </form>
 
-        {/* REGISTER LINK */}
-        <div className="text-center text-sm text-white">
-
-          Don't have an account?{" "}
-
-          <span
-            onClick={() => navigate("/register")}
-            className="text-cyan-300 font-semibold cursor-pointer hover:underline"
-          >
-            Register
-          </span>
-
+      {/* Demo accounts — kept for evaluation/demo use. Remove this block
+          to hide them in a real deployment. */}
+      <details className="mt-6 rounded-xl border border-line bg-surface-2 overflow-hidden">
+        <summary className="px-4 py-2.5 text-xs font-semibold text-muted uppercase tracking-wide cursor-pointer select-none">
+          Demo accounts
+        </summary>
+        <div className="px-4 pb-3 space-y-1 text-xs text-muted">
+          <p>Admin · sid@example.com</p>
+          <p>Student · student@example.com</p>
+          <p>Alumni · alumni@example.com</p>
         </div>
-
-        {/* TEST ACCOUNTS */}
-        <div className="pt-3 border-t border-white/20 text-xs text-center text-gray-200 space-y-1">
-
-          <p className="font-semibold">
-            Test Accounts
-          </p>
-
-          <p>👑 Admin → sid@example.com</p>
-          <p>🎓 Student → student@example.com</p>
-          <p>🏢 Alumni → alumni@example.com</p>
-
-        </div>
-
-      </motion.form>
-    </div>
+      </details>
+    </AuthShell>
   );
 };
+
+const Label = ({ htmlFor, children }) => (
+  <label
+    htmlFor={htmlFor}
+    className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5"
+  >
+    {children}
+  </label>
+);
 
 export default Login;
