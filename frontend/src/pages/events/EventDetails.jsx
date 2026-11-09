@@ -187,7 +187,7 @@ const EventDetails = () => {
               {canDelete && (
                 <button
                   onClick={handleDelete}
-                  className="icon-btn !w-10 !h-10 border border-line text-red-500 hover:text-red-600"
+                  className="icon-btn !w-10 !h-10 border border-line text-danger hover:text-danger"
                   aria-label="Delete"
                   title="Delete"
                 >

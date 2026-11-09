@@ -371,7 +371,7 @@ const EventCard = ({ event: ev, user, onOpen, onRSVP, onDelete }) => {
           {canDelete && (
             <button
               onClick={(e) => onDelete(e, ev)}
-              className="icon-btn !w-9 !h-9 border border-line text-red-500 hover:text-red-600"
+              className="icon-btn !w-9 !h-9 border border-line text-danger hover:text-danger"
               aria-label="Delete"
               title="Delete"
             >

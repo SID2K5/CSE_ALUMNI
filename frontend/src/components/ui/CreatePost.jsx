@@ -266,7 +266,7 @@ const CreatePost = ({
           </button>
 
           <pre className="
-            text-green-400
+            text-success
             text-sm
             overflow-auto
           ">

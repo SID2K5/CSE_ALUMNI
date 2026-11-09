@@ -311,7 +311,7 @@ const Connections = () => {
 
           </div>
 
-          <div className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-purple-500/20 text-purple-300 font-semibold text-sm">
+          <div className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-brand/20 text-accent font-semibold text-sm">
 
             {requests.length} Requests
 
@@ -344,7 +344,7 @@ const Connections = () => {
                       avatarUrl(r.sender, 80)
                     }
                     alt=""
-                    className="w-14 h-14 rounded-full object-cover border-2 border-cyan-400"
+                    className="w-14 h-14 rounded-full object-cover border-2 border-info"
                   />
 
                   <div>
@@ -383,7 +383,7 @@ const Connections = () => {
                         "rejected"
                       )
                     }
-                    className="px-4 py-2 rounded-xl bg-red-500 text-white text-sm hover:scale-105 transition"
+                    className="px-4 py-2 rounded-xl bg-danger text-white text-sm hover:scale-105 transition"
                   >
                     Reject
                   </button>
@@ -531,7 +531,7 @@ const Connections = () => {
             >
 
               {/* GLOW */}
-              <div className="absolute top-0 right-0 w-28 h-28 bg-purple-500/20 blur-3xl rounded-full opacity-60 group-hover:opacity-100 transition" />
+              <div className="absolute top-0 right-0 w-28 h-28 bg-brand/20 blur-3xl rounded-full opacity-60 group-hover:opacity-100 transition" />
 
               {/* PROFILE */}
               <div className="relative flex items-center gap-4 mb-6">
@@ -542,7 +542,7 @@ const Connections = () => {
                     avatarUrl(u, 100)
                   }
                   alt=""
-                  className="w-20 h-20 rounded-full object-cover border-4 border-cyan-400"
+                  className="w-20 h-20 rounded-full object-cover border-4 border-info"
                 />
 
                 <div>
@@ -556,13 +556,13 @@ const Connections = () => {
                     {u.isVerified && (
                       <CheckCircle2
                         size={18}
-                        className="text-cyan-400"
+                        className="text-accent"
                       />
                     )}
 
                   </div>
 
-                  <p className="text-cyan-300 capitalize font-medium text-sm mt-1">
+                  <p className="text-info capitalize font-medium text-sm mt-1">
                     {u.role}
                   </p>
 
@@ -632,7 +632,7 @@ const Connections = () => {
                     e.stopPropagation();
                     removeConnection(u._id);
                   }}
-                  className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-500/90 hover:bg-red-600 text-white font-semibold hover:scale-[1.02] transition-all duration-300"
+                  className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-danger/90 hover:bg-danger text-white font-semibold hover:scale-[1.02] transition-all duration-300"
                 >
 
                   <UserMinus size={18} />

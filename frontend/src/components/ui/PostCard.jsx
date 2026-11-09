@@ -295,7 +295,7 @@ const PostCard = ({
                 <BadgeCheck
                   size={16}
                   className="
-                    text-blue-500
+                    text-info
                   "
                 />
 
@@ -334,7 +334,7 @@ const PostCard = ({
             className="
               cursor-pointer
               text-gray-500
-              hover:text-purple-500
+              hover:text-accent-strong dark:text-accent
               transition
             "
           />
@@ -377,9 +377,9 @@ const PostCard = ({
                       items-center
                       gap-2
                       px-4 py-3
-                      text-red-500
+                      text-danger
                       hover:bg-red-50
-                      dark:hover:bg-red-900/20
+                      dark:hover:bg-danger-soft/20
                       transition
                     "
                   >
@@ -469,7 +469,7 @@ const PostCard = ({
                   className="
                     text-sm
                     font-medium
-                    text-purple-500
+                    text-accent-strong dark:text-accent
                     hover:underline
                     cursor-pointer
                   "
@@ -712,7 +712,7 @@ const PostCard = ({
               }
               className={
                 liked
-                  ? "text-red-500"
+                  ? "text-danger"
                   : ""
               }
             >

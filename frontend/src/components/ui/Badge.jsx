@@ -5,12 +5,15 @@
  *   size:    "sm" | "md"                               (default "sm")
  */
 const variantMap = {
+  // Semantic tokens — each pairs a `*-soft` surface with its colour,
+  // and both flip with the theme.
   neutral: "bg-surface-2 text-muted border border-line",
-  success: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  danger: "bg-red-500/10 text-red-600 dark:text-red-400",
-  info: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300",
-  accent: "bg-brand-soft text-brand",
+  success: "bg-success-soft text-success",
+  warning: "bg-warning-soft text-warning",
+  danger: "bg-danger-soft text-danger",
+  info: "bg-info-soft text-info",
+  accent: "bg-accent-soft text-accent-strong dark:text-accent",
+  verified: "bg-info-soft text-verified",
 };
 
 const sizeMap = {

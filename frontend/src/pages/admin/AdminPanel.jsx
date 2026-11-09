@@ -39,7 +39,7 @@ const AdminPanel = () => {
             <button onClick={() => approve(u._id, "alumni")} className="btn-primary">Alumni</button>
             <button onClick={() => approve(u._id, "admin")} className="btn-primary">Admin</button>
 
-            <button onClick={() => reject(u._id)} className="bg-red-500 text-white px-2 rounded">
+            <button onClick={() => reject(u._id)} className="bg-danger text-white px-2 rounded">
               Reject
             </button>
 

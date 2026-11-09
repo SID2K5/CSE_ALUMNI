@@ -435,7 +435,7 @@ const AlumniCard = ({ user: u, online, onOpen }) => (
         <Avatar user={u} size={48} />
         {online && (
           <span
-            className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-surface"
+            className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-success ring-2 ring-surface"
             aria-label="online"
           />
         )}
@@ -450,7 +450,7 @@ const AlumniCard = ({ user: u, online, onOpen }) => (
           {(u.verifiedBadge || u.isVerified) && (
             <ShieldCheck
               size={14}
-              className="text-brand shrink-0"
+              className="text-verified shrink-0"
               aria-label="Verified"
             />
           )}

@@ -125,7 +125,7 @@ const MobileNav = () => {
                     logout();
                     navigate("/login");
                   }}
-                  className="btn-ghost flex-1 text-red-500"
+                  className="btn-ghost flex-1 text-danger"
                 >
                   <LogOut size={18} />
                   Logout
