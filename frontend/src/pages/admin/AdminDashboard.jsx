@@ -15,6 +15,7 @@ import {
   BarChart3,
   Clock,
   RefreshCw,
+  FileSpreadsheet,
 } from "lucide-react";
 import {
   BarChart,
@@ -27,6 +28,7 @@ import {
 } from "recharts";
 
 import API from "../../services/api";
+import ReportBuilder from "../../components/admin/ReportBuilder";
 
 import {
   Avatar,
@@ -55,6 +57,8 @@ import {
    DEL  /admin/post/:id
    GET  /alumni/stats           top companies
    GET  /alumni/year-stats      graduation-year distribution
+   GET  /admin/report/meta      export datasets + filters
+   GET  /admin/report           filtered/sorted CSV (or JSON preview)
 ===================================================== */
 
 const TABS = [
@@ -63,6 +67,7 @@ const TABS = [
   { key: "events", label: "Events", icon: CalendarDays },
   { key: "jobs", label: "Jobs", icon: Briefcase },
   { key: "reports", label: "Reports", icon: ShieldAlert },
+  { key: "export", label: "Export", icon: FileSpreadsheet },
 ];
 
 const ROLES = ["student", "alumni", "teacher"];
@@ -193,6 +198,7 @@ const AdminDashboard = () => {
       {tab === "reports" && (
         <ReportsPanel onChanged={fetchStats} />
       )}
+      {tab === "export" && <ReportBuilder />}
     </div>
   );
 };
