@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 import API from "../../services/api";
-import { Button, EmptyState, Skeleton } from "../ui";
+import { Button, EmptyState, MultiSelect, Skeleton } from "../ui";
 
 /* =====================================================
    REPORT BUILDER — admin CSV export
@@ -83,18 +83,21 @@ const ReportBuilder = () => {
     setPreview(null);
   };
 
+  // Select filters hold string[]; text/number filters hold a string.
+  const isSet = (v) => (Array.isArray(v) ? v.length > 0 : v !== "" && v !== undefined);
+
   const params = useMemo(() => {
     const p = { dataset, sortBy, order };
     if (from) p.from = from;
     if (to) p.to = to;
     for (const [k, v] of Object.entries(filters)) {
-      if (v !== "" && v !== undefined) p[k] = v;
+      if (isSet(v)) p[k] = Array.isArray(v) ? v.join(",") : v;
     }
     return p;
   }, [dataset, sortBy, order, from, to, filters]);
 
   const activeFilterCount =
-    Object.values(filters).filter((v) => v !== "").length + (from ? 1 : 0) + (to ? 1 : 0);
+    Object.values(filters).filter(isSet).length + (from ? 1 : 0) + (to ? 1 : 0);
 
   const runPreview = async () => {
     setPreviewing(true);
@@ -208,20 +211,13 @@ const ReportBuilder = () => {
             {def.filters.map((f) => (
               <Field key={f.key} label={f.label}>
                 {f.type === "select" ? (
-                  <select
-                    className="input"
-                    value={filters[f.key] ?? ""}
-                    onChange={(e) =>
-                      setFilters((p) => ({ ...p, [f.key]: e.target.value }))
+                  <MultiSelect
+                    options={f.options}
+                    value={filters[f.key] ?? []}
+                    onChange={(next) =>
+                      setFilters((p) => ({ ...p, [f.key]: next }))
                     }
-                  >
-                    <option value="">Any</option>
-                    {f.options.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 ) : (
                   <input
                     className="input"
