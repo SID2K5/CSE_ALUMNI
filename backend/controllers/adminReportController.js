@@ -57,7 +57,7 @@ const DATASETS = {
         label: "Approval status",
         type: "select",
         options: ["approved", "pending"],
-        where: (v) => ({ isApproved: v === "approved" }),
+        where: (v) => (v === "approved" ? { isApproved: true } : { isApproved: { $ne: true } }),
       },
       { key: "department", label: "Department", type: "text", where: contains("department") },
       { key: "company", label: "Company", type: "text", where: contains("company") },
@@ -73,7 +73,7 @@ const DATASETS = {
         label: "Banned",
         type: "select",
         options: ["yes", "no"],
-        where: (v) => ({ banned: v === "yes" }),
+        where: (v) => (v === "yes" ? { banned: true } : { banned: { $ne: true } }),
       },
     ],
   },
@@ -122,7 +122,7 @@ const DATASETS = {
         label: "Deleted",
         type: "select",
         options: ["no", "yes"],
-        where: (v) => ({ isDeleted: v === "yes" }),
+        where: (v) => (v === "yes" ? { isDeleted: true } : { isDeleted: { $ne: true } }),
       },
       { key: "hashtag", label: "Hashtag", type: "text", where: contains("hashtags") },
     ],
@@ -212,7 +212,7 @@ const DATASETS = {
         label: "Featured",
         type: "select",
         options: ["yes", "no"],
-        where: (v) => ({ featured: v === "yes" }),
+        where: (v) => (v === "yes" ? { featured: true } : { featured: { $ne: true } }),
       },
       { key: "category", label: "Category", type: "text", where: contains("category") },
       { key: "location", label: "Location", type: "text", where: contains("location") },
@@ -295,6 +295,12 @@ const compare = (a, b) => {
   return String(a).localeCompare(String(b), undefined, { sensitivity: "base", numeric: true });
 };
 
+// A filter may arrive as ?role=a&role=b, ?role[]=a&role[]=b or ?role=a,b
+const toList = (raw) =>
+  [...new Set((Array.isArray(raw) ? raw : String(raw).split(","))
+    .map((s) => String(s).trim())
+    .filter(Boolean))];
+
 const parseDate = (v, endOfDay = false) => {
   if (!v) return null;
   const d = new Date(v);
@@ -310,7 +316,13 @@ export const getReportMeta = (req, res) => {
     key,
     label: d.label,
     columns: d.columns.map(({ key, label }) => ({ key, label })),
-    filters: d.filters.map(({ key, label, type, options }) => ({ key, label, type, options })),
+    filters: d.filters.map(({ key, label, type, options }) => ({
+      key,
+      label,
+      type,
+      options,
+      multiple: type === "select",
+    })),
   }));
   res.json({ datasets });
 };
@@ -328,18 +340,33 @@ export const generateReport = async (req, res) => {
 
     /* ---- build query from whitelisted filters ---- */
     const query = { ...(def.baseQuery || {}) };
+    const clauses = [];
 
     for (const f of def.filters) {
       const raw = req.query[f.key];
       if (raw === undefined || raw === "") continue;
-      if (f.type === "select" && !f.options.includes(String(raw))) {
-        return res.status(400).json({ message: `Invalid value for filter "${f.key}"` });
+
+      if (f.type === "select") {
+        const values = toList(raw);
+        if (values.length === 0) continue;
+        const bad = values.find((v) => !f.options.includes(v));
+        if (bad !== undefined) {
+          return res.status(400).json({ message: `Invalid value "${bad}" for filter "${f.key}"` });
+        }
+        const alternatives = values.map((v) => f.where(v));
+        clauses.push(alternatives.length === 1 ? alternatives[0] : { $or: alternatives });
+        continue;
       }
-      if (f.type === "number" && Number.isNaN(Number(raw))) {
+
+      const value = String(Array.isArray(raw) ? raw[raw.length - 1] : raw).trim();
+      if (value === "") continue;
+      if (f.type === "number" && Number.isNaN(Number(value))) {
         return res.status(400).json({ message: `Filter "${f.key}" must be a number` });
       }
-      Object.assign(query, f.where(String(raw)));
+      clauses.push(f.where(value));
     }
+
+    if (clauses.length) query.$and = clauses;
 
     const fromDate = parseDate(from);
     const toDate = parseDate(to, true);
