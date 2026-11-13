@@ -30,6 +30,11 @@ import {
 
 } from "../controllers/adminController.js";
 
+import {
+  getReportMeta,
+  generateReport,
+} from "../controllers/adminReportController.js";
+
 import protect from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -72,6 +77,26 @@ router.get(
   protect,
   adminOnly,
   getStats
+);
+
+/* =====================================================
+   📑 CSV REPORTS
+===================================================== */
+
+// 🧭 Datasets, columns and filters available for export
+router.get(
+  "/report/meta",
+  protect,
+  adminOnly,
+  getReportMeta
+);
+
+// 📥 Generate a filtered + sorted report (CSV, or JSON preview)
+router.get(
+  "/report",
+  protect,
+  adminOnly,
+  generateReport
 );
 
 /* =====================================================
