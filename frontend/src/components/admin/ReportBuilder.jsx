@@ -23,6 +23,7 @@ import { Button, EmptyState, Skeleton } from "../ui";
 const ReportBuilder = () => {
   const [meta, setMeta] = useState(null);
   const [metaLoading, setMetaLoading] = useState(true);
+  const [metaError, setMetaError] = useState(null);
 
   const [dataset, setDataset] = useState("users");
   const [filters, setFilters] = useState({});
@@ -35,19 +36,29 @@ const ReportBuilder = () => {
   const [previewing, setPreviewing] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
+  const loadMeta = async () => {
+    setMetaLoading(true);
+    setMetaError(null);
+    try {
+      const { data } = await API.get("/admin/report/meta");
+      setMeta(data);
+    } catch (err) {
+      console.error(err);
+      const status = err?.response?.status;
+      // A 404 here means the API this build points at predates the report
+      // endpoint (e.g. a preview frontend against the production backend).
+      setMetaError(
+        status === 404
+          ? "The connected backend does not include the report endpoint yet. Deploy the latest backend, then reload this page."
+          : err?.response?.data?.message || "Could not reach the report service."
+      );
+    } finally {
+      setMetaLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const run = async () => {
-      try {
-        const { data } = await API.get("/admin/report/meta");
-        setMeta(data);
-      } catch (err) {
-        console.error(err);
-        toast.error("Could not load report options");
-      } finally {
-        setMetaLoading(false);
-      }
-    };
-    run();
+    loadMeta();
   }, []);
 
   const def = useMemo(
@@ -138,13 +149,18 @@ const ReportBuilder = () => {
     );
   }
 
-  if (!meta?.datasets?.length) {
+  if (metaError || !meta?.datasets?.length) {
     return (
-      <EmptyState
-        icon={FileSpreadsheet}
-        title="Reports unavailable"
-        description="The report service did not return any datasets."
-      />
+      <div className="card p-8 flex flex-col items-center gap-4">
+        <EmptyState
+          icon={FileSpreadsheet}
+          title="Reports unavailable"
+          description={metaError || "The report service did not return any datasets."}
+        />
+        <Button variant="secondary" iconLeft={RotateCcw} onClick={loadMeta}>
+          Try again
+        </Button>
+      </div>
     );
   }
 
